@@ -1,5 +1,9 @@
 from openpyxl import load_workbook
 from pathlib import Path
+from logger import Logger
+import settings as st
+
+logger = Logger('brokerage_monthly', st.APPLICATION_LOG, write_to_stdout=st.DEBUG_MODE).get()
 
 MAX_EXCEL_ROWS_NUM = 20000
 EXCEL_START_COLUMN = 2
@@ -18,6 +22,9 @@ DEALS_STOP_STR = '3. Активы:'
 SECURITIES_START_STR = '3. Активы:'
 SECURITIES_STOP_STR = '4. Движение Ценных бумаг'
 SECURITIES_PORTFOLIO_TOTAL_STR = 'Стоимость портфеля (руб.):'
+SECURITIES_PORTFOLIO_TOTAL_BEGIN_COLUMN = 8
+SECURITIES_PORTFOLIO_TOTAL_END_COLUMN = 12
+
 
 # 4. Securities Transactions
 SECURITIES_TRANSACTIONS_START_STR = '4. Движение Ценных бумаг'
@@ -36,59 +43,97 @@ class Deals:
 
 class Securities:
     def __init__(self, sheet):
+        self.class_name = self.__class__.__name__
         self.sheet = sheet
         self.start_column = EXCEL_START_COLUMN
         self.securities: list[dict] | None = None
-        self.start_pos: int | None = None
-        self.stop_pos: int | None = None
-        self.portfolio_total_pos: int | None = None
-        self.find_boundaries()
-        self.find_portfolio_total_pos()
+        self.start_row: int | None = None
+        self.stop_row: int | None = None
+        self.portfolio_total_row: int | None = None
+        self.portfolio_total_begin_column: int = SECURITIES_PORTFOLIO_TOTAL_BEGIN_COLUMN
+        self.portfolio_total_end_column: int = SECURITIES_PORTFOLIO_TOTAL_END_COLUMN
+        self.portfolio_total_value_begin_rub: float = 0
+        self.portfolio_total_value_end_rub: float = 0
+
+        self._find_boundaries()
+        self._find_portfolio_total_row()
+        self._extract_total_portfolio_values_rub()
         self.load()
 
-    def find_boundaries(self):
+    def _find_boundaries(self):
         for i in range(1, MAX_EXCEL_ROWS_NUM):
             cell = self.sheet.cell(row=i, column=self.start_column)
             if cell.value == SECURITIES_START_STR:
-                self.start_pos = cell.row
+                self.start_row = cell.row
                 break
 
-        if self.start_pos:
-            for i in range(self.start_pos, MAX_EXCEL_ROWS_NUM):
+        if self.start_row:
+            for i in range(self.start_row, MAX_EXCEL_ROWS_NUM):
                 cell = self.sheet.cell(row=i, column=self.start_column)
                 if cell.value == SECURITIES_STOP_STR:
-                    self.stop_pos = cell.row
+                    self.stop_row = cell.row - 1
                     break
         else:
-            raise Exception('Could not find a Securities entry row index')
+            logger.error(f"{self.class_name}._find_boundaries(): "
+                         f"Could not find a Securities start row index")
 
-        if not self.stop_pos:
-            raise Exception('Could not find a Securities end row index')
+            raise Exception('Could not find a Securities start row index')
 
-    def find_portfolio_total_pos(self):
-        if self.start_pos and self.stop_pos:
-            for i in range(self.start_pos, self.stop_pos):
+        if not self.stop_row:
+            logger.error(f"{self.class_name}._find_boundaries(): "
+                         f"Could not find a Securities stop row index")
+
+            raise Exception('Could not find a Securities stop row index')
+
+        logger.info(f"{self.class_name}._find_boundaries(): "
+                    f'Securities boundaries found: {self.start_row}, {self.stop_row}')
+
+    def _find_portfolio_total_row(self):
+        if self.start_row and self.stop_row:
+            for i in range(self.start_row, self.stop_row):
                 cell = self.sheet.cell(row=i, column=self.start_column)
                 if cell.value == SECURITIES_PORTFOLIO_TOTAL_STR:
-                    self.portfolio_total_pos = cell.row
+                    self.portfolio_total_row = cell.row
 
         else:
-            raise Exception('No securities start or/and stop position(s) defined')
+            logger.error(f"{self.class_name}._find_portfolio_total_row(): "
+                         f"No securities start or/and stop row(s) defined")
+
+            raise Exception('No securities start or/and stop row(s) defined')
+
+        logger.info(f"{self.class_name}._find_portfolio_total_row(): "
+                    f'Securities portfolio total row found: {self.portfolio_total_row}')
+
+    def _extract_total_portfolio_values_rub(self):
+        if self.portfolio_total_row and self.portfolio_total_begin_column:
+            cell_begin = self.sheet.cell(row=self.portfolio_total_row,
+                                         column=self.portfolio_total_begin_column)
+            self.portfolio_total_value_begin_rub = float(cell_begin.value)
+            logger.info(f"{self.class_name}._extract_total_portfolio_values_rub(): "
+                        f"portfolio_total_value_begin_rub = {self.portfolio_total_value_begin_rub}")
+
+        if self.portfolio_total_row and self.portfolio_total_end_column:
+            cell_end = self.sheet.cell(row=self.portfolio_total_row,
+                                       column=self.portfolio_total_end_column)
+            self.portfolio_total_value_end_rub = float(cell_end.value)
+            logger.info(f"{self.class_name}._extract_total_portfolio_values_rub(): "
+                        f"portfolio_total_value_end_rub = {self.portfolio_total_value_end_rub}")
 
 
-    def find_securities_entry(self) -> int | None:
-        for i in range(1, MAX_EXCEL_ROWS_NUM):
-            cell = self.sheet.cell(row=i, column=self.start_column)
-            cell_next = self.sheet.cell(row=i+1, column=self.start_column)
-            if cell.value == SECURITIES_ENTRY_STR and cell_next.value == 'Вид актива':
-                entry_index = i + 2
-                cell = self.sheet.cell(row=entry_index, column=self.start_column)
-                print(entry_index)
-                print(cell.row, cell.column)
-                print(cell.coordinate)
-                return cell.row
 
-        return None
+    # def find_securities_entry(self) -> int | None:
+    #     for i in range(1, MAX_EXCEL_ROWS_NUM):
+    #         cell = self.sheet.cell(row=i, column=self.start_column)
+    #         cell_next = self.sheet.cell(row=i+1, column=self.start_column)
+    #         if cell.value == SECURITIES_ENTRY_STR and cell_next.value == 'Вид актива':
+    #             entry_index = i + 2
+    #             cell = self.sheet.cell(row=entry_index, column=self.start_column)
+    #             print(entry_index)
+    #             print(cell.row, cell.column)
+    #             print(cell.coordinate)
+    #             return cell.row
+    #
+    #     return None
 
     def load(self):
         pass
