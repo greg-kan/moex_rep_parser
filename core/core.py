@@ -7,6 +7,16 @@ def ifnull(var, val):
     return var
 
 
+def tofloat(var) -> float | None:
+    if var is None:
+        return None
+
+    try:
+        return float(var)
+    except Exception as e:
+        return None
+
+
 def get_file_name(file_name):
     f_name, _ = os.path.splitext(file_name)
     return f_name

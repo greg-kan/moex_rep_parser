@@ -7,6 +7,7 @@ from logger import Logger
 import settings as st
 from core import *
 from reports import BrokerageMonthly
+from db.db_helper import *
 
 logger = Logger('main', st.APPLICATION_LOG, write_to_stdout=st.DEBUG_MODE).get()
 
@@ -24,11 +25,13 @@ def routine():
 
     # # Test on all files
     # lst_files = os.listdir(reports_dir)
-    # for fl in lst_files:
+    # for fl in sorted(lst_files):
     #     if get_file_extension(fl) == '.xlsx':
     #         rep_path = reports_dir / fl
     #         print(rep_path)
-    #         brokerage = BrokerageMonthly(report_path)
+    #         print()
+    #         brokerage = BrokerageMonthly(rep_path)
+    #         print()
     #         print()
 
     brokerage = BrokerageMonthly(report_path)
@@ -38,4 +41,5 @@ def routine():
 
 
 if __name__ == "__main__":
-    routine()
+    trying_to_connect()
+    # routine()
