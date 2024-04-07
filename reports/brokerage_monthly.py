@@ -2,6 +2,7 @@ from openpyxl import load_workbook
 from pathlib import Path
 from logger import Logger
 import settings as st
+from core import *
 
 logger = Logger('brokerage_monthly', st.APPLICATION_LOG, write_to_stdout=st.DEBUG_MODE).get()
 
@@ -129,13 +130,13 @@ class Securities:
         if self.portfolio_total_row:
             cell_begin = self.sheet.cell(row=self.portfolio_total_row,
                                          column=SECURITIES_PORTFOLIO_TOTAL_BEGIN_COLUMN)
-            self.portfolio_total_value_begin_rub = float(cell_begin.value)
+            self.portfolio_total_value_begin_rub = float(ifnull(cell_begin.value, 0))
             logger.info(f"{self.class_name}._extract_total_portfolio_values_rub(): "
                         f"portfolio_total_value_begin_rub = {self.portfolio_total_value_begin_rub}")
 
             cell_end = self.sheet.cell(row=self.portfolio_total_row,
                                        column=SECURITIES_PORTFOLIO_TOTAL_END_COLUMN)
-            self.portfolio_total_value_end_rub = float(cell_end.value)
+            self.portfolio_total_value_end_rub = float(ifnull(cell_end.value, 0))
             logger.info(f"{self.class_name}._extract_total_portfolio_values_rub(): "
                         f"portfolio_total_value_end_rub = {self.portfolio_total_value_end_rub}")
         else:
@@ -176,10 +177,11 @@ class Securities:
                                                 column=SECURITIES_TABLE_END_SUMM_NKD_COLUMN)
             cell_end_summ_including_nkd = self.sheet.cell(row=self.table_total_row,
                                                           column=SECURITIES_TABLE_END_SUMM_INCLUDING_NKD_COLUMN)
-            self.table_begin_summ_nkd = float(cell_begin_summ_nkd.value)
-            self.table_begin_summ_including_nkd = float(cell_begin_summ_including_nkd.value)
-            self.table_end_summ_nkd = float(cell_end_summ_nkd.value)
-            self.table_end_summ_including_nkd = float(cell_end_summ_including_nkd.value)
+
+            self.table_begin_summ_nkd = float(ifnull(cell_begin_summ_nkd.value, 0))
+            self.table_begin_summ_including_nkd = float(ifnull(cell_begin_summ_including_nkd.value, 0))
+            self.table_end_summ_nkd = float(ifnull(cell_end_summ_nkd.value, 0))
+            self.table_end_summ_including_nkd = float(ifnull(cell_end_summ_including_nkd.value, 0))
 
             logger.info(f"{self.class_name}._extract_table_summ_values(): "
                         f'Securities table summ values found: {self.table_begin_summ_nkd}, '
@@ -202,11 +204,6 @@ class Securities:
             logger.error(f"{self.class_name}._check_table_total_summs(): "
                          f"Summs in total portfolio table do not mach total summs in a detailed table")
             raise Exception('Summs in total portfolio table do not mach total summs in a detailed table')
-
-
-
-
-
 
 
 
