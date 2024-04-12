@@ -6,8 +6,9 @@ from datetime import datetime
 from logger import Logger
 import settings as st
 from core import *
-from reports import BrokerageMonthly
+from reports import BrokerMonthly
 from db.db_helper import *
+from db.sql_alch_tutor import *
 
 logger = Logger('main', st.APPLICATION_LOG, write_to_stdout=st.DEBUG_MODE).get()
 
@@ -20,8 +21,8 @@ report_path = reports_dir / report_file
 # STOP_REPORT_STR = 'Владелец: ООО "Компания БКС"'
 
 
-def routine():
-    logger.info('Routine started')
+def routine_old():
+    logger.info('Routine_old started')
 
     # # Test on all files
     # lst_files = os.listdir(reports_dir)
@@ -30,16 +31,17 @@ def routine():
     #         rep_path = reports_dir / fl
     #         print(rep_path)
     #         print()
-    #         brokerage = BrokerageMonthly(rep_path)
+    #         broker = BrokerageMonthly(rep_path)
     #         print()
     #         print()
 
-    brokerage = BrokerageMonthly(report_path)
-    print('securities_start_row =', brokerage.securities.start_row)
+    broker = BrokerMonthly(report_path)
+    print('securities_start_row =', broker.securities.start_row)
 
-    logger.info('Routine stopped')
+    logger.info('Routine_old finished')
 
 
 if __name__ == "__main__":
-    trying_to_connect()
-    # routine()
+    # trying_to_connect()
+    # test_routine()
+    routine_old()

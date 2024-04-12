@@ -1,8 +1,16 @@
+import ntpath
 from openpyxl import load_workbook
 from pathlib import Path
 from logger import Logger
 import settings as st
 from core import *
+from db import store_securities_to_db
+
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
 
 logger = Logger('brokerage_monthly', st.APPLICATION_LOG, write_to_stdout=st.DEBUG_MODE).get()
 
@@ -78,11 +86,12 @@ class Security:
 class Securities:
     securities: list[Security] = list()
 
-    def __init__(self, sheet):
+    def __init__(self, sheet, year: int, month: int):
         self.class_name = self.__class__.__name__
         self.sheet = sheet
+        self.year = year
+        self.month = month
         self.start_column = EXCEL_START_COLUMN
-        # self.securities: list[dict] | None = None
         self.start_row: int | None = None
         self.stop_row: int | None = None
         self.portfolio_total_row: int | None = None
@@ -320,13 +329,16 @@ class Securities:
                          f"Summs in total row do not mach summs of all rows")
             raise Exception("Summs in total row do not mach summs of all rows")
 
+    def _store_to_db(self):
+        store_securities_to_db()  # (self.securities, self.year, self.month)
+
 
 class SecuritiesTransactions:
     def __init__(self, sheet):
         self.sheet = sheet
 
 
-class BrokerageMonthly:
+class BrokerMonthly:
     # 1. Money
     money: Money
     # 2. Deals
@@ -337,18 +349,24 @@ class BrokerageMonthly:
     securities_transactions: SecuritiesTransactions
 
     def __init__(self, report_path):
+        self.year: int = 0
+        self.month: int = 0
         self.stop_report_str = STOP_REPORT_STR
         self.class_name = self.__class__.__name__
         self.report_path: Path = report_path
         self.workbook = load_workbook(self.report_path)
         self.sheet = self.workbook[self.workbook.sheetnames[0]]
 
+        self._extract_year_and_month()
+
         self.money = Money(self.sheet)
         self.deals = Deals(self.sheet)
-        self.securities = Securities(self.sheet)
+        self.securities = Securities(self.sheet, self.year, self.month)
         self.securities_transactions = SecuritiesTransactions(self.sheet)
 
-    def feature_method(self):
-        pass
-
-
+    def _extract_year_and_month(self):
+        bare_file_name = get_file_name(ntpath.basename(self.report_path))
+        str_year_month = bare_file_name.split('_ALL_')[-1]
+        self.year = 2000 + int(str_year_month.split('-')[0])
+        self.month = int(str_year_month.split('-')[-1])
+        logger.info(f"Year {self.year} and Month {self.month} were extracted")
