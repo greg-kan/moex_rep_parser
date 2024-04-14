@@ -1,33 +1,18 @@
-import ntpath
-from openpyxl import load_workbook
-from pathlib import Path
 from logger import Logger
 import settings as st
 from core import *
-from db import store_securities_to_db
 
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
-
-
-logger = Logger('brokerage_monthly', st.APPLICATION_LOG, write_to_stdout=st.DEBUG_MODE).get()
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, DateTime, Numeric, DOUBLE_PRECISION
+from sqlalchemy.sql import func
+from db import Base
 
 MAX_EXCEL_ROWS_NUM = 20000
 EXCEL_START_COLUMN = 2
 
-STOP_REPORT_STR = 'Владелец: ООО "Компания БКС"'
+SCHEMA_NAME = 'reports'
 
-# 1. Money
-MONEY_START_STR = '1. Движение денежных средств'
-MONEY_STOP_STR = '2.1. Сделки:'
-
-# 2. Deals
-DEALS_START_STR = '2.1. Сделки:'
-DEALS_STOP_STR = '3. Активы:'
-
-# 3. Securities
 SECURITIES_START_STR = '3. Активы:'
 SECURITIES_STOP_STR = '4. Движение Ценных бумаг'
 SECURITIES_PORTFOLIO_TOTAL_STR = 'Стоимость портфеля (руб.):'
@@ -39,24 +24,36 @@ SECURITIES_TABLE_BEGIN_SUMM_NKD_COLUMN = 9
 SECURITIES_TABLE_BEGIN_SUMM_INCLUDING_NKD_COLUMN = 10
 SECURITIES_TABLE_END_SUMM_NKD_COLUMN = 13
 SECURITIES_TABLE_END_SUMM_INCLUDING_NKD_COLUMN = 14
-# SECURITIES_TABLE_COLUMNS = 14
 
-# 4. Securities Transactions
-SECURITIES_TRANSACTIONS_START_STR = '4. Движение Ценных бумаг'
-SECURITIES_TRANSACTIONS_STOP_STR = '(1*) - оплата проводится со своего (клиента) счета'
+logger = Logger('brokerage_securities', st.APPLICATION_LOG, write_to_stdout=st.DEBUG_MODE).get()
 
 
-class Money:
-    def __init__(self, sheet):
-        self.sheet = sheet
+class BrokerageMonthlySecurity(Base):
+    __tablename__ = 'brokerage_monthly_security'
+    __table_args__ = {"schema": SCHEMA_NAME}
 
+    id = Column(Integer, primary_key=True)
+    securities_id = Column(Integer, ForeignKey(f'{SCHEMA_NAME}.brokerage_monthly_securities.id'))
+    securities = relationship("BrokerageMonthlySecurities", backref="securities")
 
-class Deals:
-    def __init__(self, sheet):
-        self.sheet = sheet
+    secid = Column(String, nullable=False)
+    isin = Column(String)
+    sectype = Column(String)
+    quantity_begin = Column(DOUBLE_PRECISION)
+    closeprice_begin = Column(Numeric(19, 6))
+    summ_nkd_begin = Column(Numeric(19, 6))
+    summ_including_nkd_begin = Column(Numeric(19, 6))
+    quantity_end = Column(DOUBLE_PRECISION)
+    closeprice_end = Column(Numeric(19, 6))
+    summ_nkd_end = Column(Numeric(19, 6))
+    summ_including_nkd_end = Column(Numeric(19, 6))
+    bidding_organizer = Column(String)
+    store_place = Column(String)
+    emitent = Column(String)
 
+    inserted = Column(DateTime(), server_default=func.now())
+    updated = Column(DateTime(), onupdate=func.now())
 
-class Security:
     def __init__(self, secid: str, isin: str | None, sectype: str | None,
                  quantity_begin: float | None, closeprice_begin: float | None, summ_nkd_begin: float | None,
                  summ_including_nkd_begin: float | None, quantity_end: float | None, closeprice_end: float | None,
@@ -65,46 +62,50 @@ class Security:
 
         self.class_name = self.__class__.__name__
 
-        self.secid: str = secid
-        self.isin: str | None = isin
-        self.sectype: str | None = sectype
-        self.quantity_begin: float | None = quantity_begin
-        self.closeprice_begin: float | None = closeprice_begin
-        self.summ_nkd_begin: float | None = summ_nkd_begin
-        self.summ_including_nkd_begin: float | None = summ_including_nkd_begin
-
-        self.quantity_end: float | None = quantity_end
-        self.closeprice_end: float | None = closeprice_end
-        self.summ_nkd_end: float | None = summ_nkd_end
-        self.summ_including_nkd_end: float | None = summ_including_nkd_end
-
-        self.bidding_organizer: str | None = bidding_organizer
-        self.store_place: str | None = store_place
-        self.emitent: str | None = emitent
+        self.secid = secid
+        self.isin = isin
+        self.sectype = sectype
+        self.quantity_begin = quantity_begin
+        self.closeprice_begin = closeprice_begin
+        self.summ_nkd_begin = summ_nkd_begin
+        self.summ_including_nkd_begin = summ_including_nkd_begin
+        self.quantity_end = quantity_end
+        self.closeprice_end = closeprice_end
+        self.summ_nkd_end = summ_nkd_end
+        self.summ_including_nkd_end = summ_including_nkd_end
+        self.bidding_organizer = bidding_organizer
+        self.store_place = store_place
+        self.emitent = emitent
 
 
-class Securities:
-    securities: list[Security] = list()
+class BrokerageMonthlySecurities(Base):
+    __tablename__ = 'brokerage_monthly_securities'
+    __table_args__ = {"schema": SCHEMA_NAME}
 
-    def __init__(self, sheet, year: int, month: int):
+    id = Column(Integer, primary_key=True)
+    report_id = Column(Integer, ForeignKey(f'{SCHEMA_NAME}.brokerage_monthly.id'), unique=True)
+
+    portfolio_total_value_begin_rub = Column(Numeric(19, 6))
+    portfolio_total_value_end_rub = Column(Numeric(19, 6))
+
+    table_summ_nkd_begin = Column(Numeric(19, 6))
+    table_summ_including_nkd_begin = Column(Numeric(19, 6))
+    table_summ_nkd_end = Column(Numeric(19, 6))
+    table_summ_including_nkd_end = Column(Numeric(19, 6))
+
+    inserted = Column(DateTime(), server_default=func.now())
+    updated = Column(DateTime(), onupdate=func.now())
+
+    def __init__(self, sheet):
         self.class_name = self.__class__.__name__
         self.sheet = sheet
-        self.year = year
-        self.month = month
         self.start_column = EXCEL_START_COLUMN
         self.start_row: int | None = None
         self.stop_row: int | None = None
         self.portfolio_total_row: int | None = None
-        self.portfolio_total_value_begin_rub: float = 0
-        self.portfolio_total_value_end_rub: float = 0
         self.table_start_row: int | None = None
         self.table_stop_row: int | None = None
         self.table_total_row: int | None = None
-
-        self.table_summ_nkd_begin: float = 0
-        self.table_summ_including_nkd_begin: float = 0
-        self.table_summ_nkd_end: float = 0
-        self.table_summ_including_nkd_end: float = 0
 
         self._find_boundaries()
         self._find_portfolio_total_row()
@@ -113,6 +114,10 @@ class Securities:
         self._extract_table_summ_values()
         self._load_securities_table()
         self._check_all_securities_summs(6)
+
+    def __repr__(self):
+        return (f"<BrokerageSecurities({self.portfolio_total_value_begin_rub}, "
+                f"{self.portfolio_total_value_end_rub})>")
 
     def _find_boundaries(self):
         for i in range(1, MAX_EXCEL_ROWS_NUM+1):
@@ -225,7 +230,7 @@ class Securities:
 
     def _load_securities_table(self):
         if self.table_start_row and self.table_stop_row:
-            self.securities.clear()
+            # self.securities.clear()
             for i in range(self.table_start_row, self.table_stop_row+1):
                 cell = self.sheet.cell(row=i, column=2)
                 if not cell.value:
@@ -271,9 +276,11 @@ class Securities:
                 cell = self.sheet.cell(row=i, column=17)
                 emitent: str | None = cell.value
 
-                security = Security(secid, isin, sectype, quantity_begin, closeprice_begin, summ_nkd_begin,
-                                    summ_including_nkd_begin, quantity_end, closeprice_end, summ_nkd_end,
-                                    summ_including_nkd_end, bidding_organizer, store_place, emitent)
+                security = BrokerageMonthlySecurity(
+                    secid, isin, sectype, quantity_begin, closeprice_begin, summ_nkd_begin,
+                    summ_including_nkd_begin, quantity_end, closeprice_end, summ_nkd_end,
+                    summ_including_nkd_end, bidding_organizer, store_place, emitent
+                )
 
                 self.securities.append(security)
 
@@ -328,45 +335,3 @@ class Securities:
             logger.error(f"{self.class_name}._check_all_securities_summs(): "
                          f"Summs in total row do not mach summs of all rows")
             raise Exception("Summs in total row do not mach summs of all rows")
-
-    def _store_to_db(self):
-        store_securities_to_db()  # (self.securities, self.year, self.month)
-
-
-class SecuritiesTransactions:
-    def __init__(self, sheet):
-        self.sheet = sheet
-
-
-class BrokerMonthly:
-    # 1. Money
-    money: Money
-    # 2. Deals
-    deals: Deals
-    # 3. Securities
-    securities: Securities
-    # 4. Securities Transactions
-    securities_transactions: SecuritiesTransactions
-
-    def __init__(self, report_path):
-        self.year: int = 0
-        self.month: int = 0
-        self.stop_report_str = STOP_REPORT_STR
-        self.class_name = self.__class__.__name__
-        self.report_path: Path = report_path
-        self.workbook = load_workbook(self.report_path)
-        self.sheet = self.workbook[self.workbook.sheetnames[0]]
-
-        self._extract_year_and_month()
-
-        self.money = Money(self.sheet)
-        self.deals = Deals(self.sheet)
-        self.securities = Securities(self.sheet, self.year, self.month)
-        self.securities_transactions = SecuritiesTransactions(self.sheet)
-
-    def _extract_year_and_month(self):
-        bare_file_name = get_file_name(ntpath.basename(self.report_path))
-        str_year_month = bare_file_name.split('_ALL_')[-1]
-        self.year = 2000 + int(str_year_month.split('-')[0])
-        self.month = int(str_year_month.split('-')[-1])
-        logger.info(f"Year {self.year} and Month {self.month} were extracted")

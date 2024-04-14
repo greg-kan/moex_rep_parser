@@ -1,2 +1,2 @@
-from reports.broker_monthly import BrokerMonthly
-
+from reports.brokerage.monthly import BrokerageMonthly
+from reports.brokerage.securities import BrokerageMonthlySecurities

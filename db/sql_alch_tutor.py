@@ -37,8 +37,8 @@ class Address(Base):
 
     id = Column(Integer, primary_key=True)
     email_address = Column(String, nullable=False)
-    user_id = Column(Integer, ForeignKey(f'{SCHEMA_NAME}.user.id'))
 
+    user_id = Column(Integer, ForeignKey(f'{SCHEMA_NAME}.user.id'))
     user = relationship("User", backref="addresses")
 
     def __repr__(self):
