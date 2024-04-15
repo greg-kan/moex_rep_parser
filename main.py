@@ -18,29 +18,29 @@ report_path = reports_dir / report_file
 def routine():
     logger.info('Routine started')
 
-    Base.metadata.create_all(engine)
-    session = Session(bind=engine)
+    # Base.metadata.create_all(engine)
+    # session = Session(bind=engine)
 
-    # brokerage = BrokerageMonthly(report_path)
+    brokerage = BrokerageMonthly(report_path)
     # print(brokerage.securities.report)
     # session.add(brokerage)
 
-    # Test on all files
-    lst_files = os.listdir(reports_dir)
-    for fl in sorted(lst_files):
-        if get_file_extension(fl) == '.xlsx':
-            rep_path = reports_dir / fl
-            print(rep_path)
-            print()
-
-            brokerage = BrokerageMonthly(rep_path)
-            print(brokerage.securities.report)
-            session.add(brokerage)
-
-            print()
-            print()
-
-    session.commit()
+    # # Test on all files
+    # lst_files = os.listdir(reports_dir)
+    # for fl in sorted(lst_files):
+    #     if get_file_extension(fl) == '.xlsx':
+    #         rep_path = reports_dir / fl
+    #         print(rep_path)
+    #         print()
+    #
+    #         brokerage = BrokerageMonthly(rep_path)
+    #         print(brokerage.securities.report)
+    #         session.add(brokerage)
+    #
+    #         print()
+    #         print()
+    #
+    # session.commit()
 
     logger.info('Routine finished')
 

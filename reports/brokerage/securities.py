@@ -25,7 +25,7 @@ SECURITIES_TABLE_BEGIN_SUMM_INCLUDING_NKD_COLUMN = 10
 SECURITIES_TABLE_END_SUMM_NKD_COLUMN = 13
 SECURITIES_TABLE_END_SUMM_INCLUDING_NKD_COLUMN = 14
 
-logger = Logger('brokerage_securities', st.APPLICATION_LOG, write_to_stdout=st.DEBUG_MODE).get()
+logger = Logger('brokerage_monthly_securities', st.APPLICATION_LOG, write_to_stdout=st.DEBUG_MODE).get()
 
 
 class BrokerageMonthlySecurity(Base):
@@ -77,6 +77,9 @@ class BrokerageMonthlySecurity(Base):
         self.store_place = store_place
         self.emitent = emitent
 
+    def __repr__(self):
+        return f"<BrokerageMonthlySecurity({self.secid})>"
+
 
 class BrokerageMonthlySecurities(Base):
     __tablename__ = 'brokerage_monthly_securities'
@@ -116,7 +119,7 @@ class BrokerageMonthlySecurities(Base):
         self._check_all_securities_summs(6)
 
     def __repr__(self):
-        return (f"<BrokerageSecurities({self.portfolio_total_value_begin_rub}, "
+        return (f"<BrokerageMonthlySecurities({self.portfolio_total_value_begin_rub}, "
                 f"{self.portfolio_total_value_end_rub})>")
 
     def _find_boundaries(self):

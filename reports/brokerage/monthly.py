@@ -12,6 +12,7 @@ from sqlalchemy.sql import func
 from db import Base
 
 from reports.brokerage.securities import BrokerageMonthlySecurities
+from reports.brokerage.money import BrokerageMonthlyMoney
 
 SCHEMA_NAME = 'reports'
 STOP_REPORT_STR = 'Владелец: ООО "Компания БКС"'
@@ -45,9 +46,9 @@ class BrokerageMonthly(Base):
 
         self._extract_year_and_month()
 
-        # self.money = Money(self.sheet)
+        self.money = BrokerageMonthlyMoney(self.sheet)
         # self.deals = Deals(self.sheet)
-        self.securities = BrokerageMonthlySecurities(self.sheet)
+        # self.securities = BrokerageMonthlySecurities(self.sheet)
         # self.securities_transactions = SecuritiesTransactions(self.sheet)
 
     def __repr__(self):
