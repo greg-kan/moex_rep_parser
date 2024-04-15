@@ -123,14 +123,14 @@ class BrokerageMonthlySecurities(Base):
                 f"{self.portfolio_total_value_end_rub})>")
 
     def _find_boundaries(self):
-        for i in range(1, MAX_EXCEL_ROWS_NUM+1):
+        for i in range(1, MAX_EXCEL_ROWS_NUM):
             cell = self.sheet.cell(row=i, column=self.start_column)
             if cell.value == SECURITIES_START_STR:
                 self.start_row = cell.row
                 break
 
         if self.start_row:
-            for i in range(self.start_row, MAX_EXCEL_ROWS_NUM+1):
+            for i in range(self.start_row, MAX_EXCEL_ROWS_NUM):
                 cell = self.sheet.cell(row=i, column=self.start_column)
                 if cell.value == SECURITIES_STOP_STR:
                     self.stop_row = cell.row - 1
@@ -152,7 +152,7 @@ class BrokerageMonthlySecurities(Base):
 
     def _find_portfolio_total_row(self):
         if self.start_row and self.stop_row:
-            for i in range(self.start_row, self.stop_row+1):
+            for i in range(self.start_row, self.stop_row):
                 cell = self.sheet.cell(row=i, column=self.start_column)
                 if cell.value == SECURITIES_PORTFOLIO_TOTAL_STR:
                     self.portfolio_total_row = cell.row
