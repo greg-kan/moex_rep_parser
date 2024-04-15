@@ -185,18 +185,20 @@ class BrokerageMonthlySecurities(Base):
 
     def _find_table_boundaries(self):
         if self.start_row and self.stop_row:
-            for i in range(self.start_row, self.stop_row+1):
+            for i in range(self.start_row, self.stop_row):
                 cell = self.sheet.cell(row=i, column=self.start_column)
 
                 if cell.value == SECURITIES_TABLE_START_STR:
                     self.table_start_row = cell.row + 1
+                    break
 
-            for i in range(self.start_row, self.stop_row+1):
+            for i in range(self.start_row, self.stop_row):
                 cell = self.sheet.cell(row=i, column=self.start_column)
 
                 if cell.value == SECURITIES_TABLE_STOP_STR:
                     self.table_total_row = cell.row
                     self.table_stop_row = cell.row - 1
+                    break
 
         else:
             logger.error(f"{self.class_name}._find_table_boundaries(): "
@@ -234,7 +236,7 @@ class BrokerageMonthlySecurities(Base):
     def _load_securities_table(self):
         if self.table_start_row and self.table_stop_row:
             # self.securities.clear()
-            for i in range(self.table_start_row, self.table_stop_row+1):
+            for i in range(self.table_start_row, self.table_stop_row):
                 cell = self.sheet.cell(row=i, column=2)
                 if not cell.value:
                     raise Exception('secid value must not be None')

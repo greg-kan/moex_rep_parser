@@ -20,18 +20,20 @@ MONEY_TOTAL_BEGIN_STR = 'Остаток денежных средств на н�
 MONEY_TOTAL_END_STR = 'Остаток денежных средств на конец периода (Рубль):'
 MONEY_TOTAL_COLUMN = 8
 
-MONEY_TABLE_START_STR1 = 'Рубль'  # + next str Дата
-MONEY_TABLE_START_STR2 = 'Дата'
-MONEY_TABLE_STOP_STR = 'Итого по валюте Рубль:'
+MONEY_MAIN_TABLE_START_STR1 = 'Рубль'  # + next str Дата
+MONEY_MAIN_TABLE_START_STR2 = 'Дата'
+MONEY_MAIN_TABLE_STOP_STR = 'Итого по валюте Рубль:'
 
-# MONEY_TABLE_BEGIN_SUMM_NKD_COLUMN = 9
-# MONEY_TABLE_BEGIN_SUMM_INCLUDING_NKD_COLUMN = 10
-# MONEY_TABLE_END_SUMM_NKD_COLUMN = 13
-# MONEY_TABLE_END_SUMM_INCLUDING_NKD_COLUMN = 14
+MONEY_MAIN_TABLE_CREDIT_SUMM_COLUMN = 7
+MONEY_MAIN_TABLE_DEBET_SUMM_COLUMN = 8
+MONEY_MAIN_TABLE_NDS_SUMM_COLUMN = 9
+MONEY_MAIN_TABLE_SALDO_SUMM_COLUMN = 10
 
-MONEY_FEES_FINES_TABLE_START_STR = 'Вид сбора/штрафа'
+MONEY_FEES_FINES_TABLE_START_STR1 = 'Рубль'
+MONEY_FEES_FINES_TABLE_START_STR2 = 'Вид сбора/штрафа'
 MONEY_FEES_FINES_TABLE_STOP_STR = 'Итого по валюте Рубль:'
 
+MONEY_FEES_FINES_TABLE_FEE_SUMM_COLUMN = 6
 
 logger = Logger('brokerage_monthly_money', st.APPLICATION_LOG, write_to_stdout=st.DEBUG_MODE).get()
 
@@ -69,9 +71,28 @@ class BrokerageMonthlyMoney:  # (Base)
         self.total_sum_begin_rub: float = 0
         self.total_sum_end_rub: float = 0
 
+        self.main_table_start_row: int | None = None
+        self.main_table_stop_row: int | None = None
+        self.main_table_total_row: int | None = None
+
+        self.main_table_credit_summ: float = 0
+        self.main_table_debet_summ: float = 0
+        self.main_table_nds_summ: float = 0
+        self.main_table_saldo_summ: float = 0
+
+        self.fees_fines_table_start_row: int | None = None
+        self.fees_fines_table_stop_row: int | None = None
+        self.fees_fines_table_total_row: int | None = None
+
+        self.fees_fines_table_fee_summ: float = 0
+
         self._find_boundaries()
         self._find_total_rows()
         self._extract_total_sums_rub()
+        self._find_main_table_boundaries()
+        self._extract_main_table_summ_values()
+        self._find_fees_fines_table_boundaries()
+        self._extract_fees_fines_table_summ_value()
 
     def __repr__(self):
         return (f"<BrokerageMonthlyMoney({self.total_sum_begin_rub}, "
@@ -157,3 +178,99 @@ class BrokerageMonthlyMoney:  # (Base)
             logger.error(f"{self.class_name}._extract_total_sums_rub(): "
                          f"No money total begin or | and end row(s) defined")
             raise Exception('No money total begin or | and end row(s) defined')
+
+    def _find_main_table_boundaries(self):
+        if self.start_row and self.stop_row:
+            for i in range(self.start_row, self.stop_row):
+                cell = self.sheet.cell(row=i, column=self.start_column)
+
+                if cell.value == MONEY_MAIN_TABLE_START_STR1:
+                    cell_next = self.sheet.cell(row=i+1, column=self.start_column)
+                    if cell_next.value == MONEY_MAIN_TABLE_START_STR2:
+                        self.main_table_start_row = cell_next.row + 1
+                        break
+
+            for i in range(self.main_table_start_row, self.stop_row):
+                cell = self.sheet.cell(row=i, column=self.start_column)
+
+                if cell.value == MONEY_MAIN_TABLE_STOP_STR:
+                    self.main_table_total_row = cell.row
+                    self.main_table_stop_row = cell.row - 1
+                    break
+
+        else:
+            logger.error(f"{self.class_name}._find_main_table_boundaries(): "
+                         f"No money start or/and stop row(s) defined")
+            raise Exception('No money start or/and stop row(s) defined')
+
+        logger.info(f"{self.class_name}._find_main_table_boundaries(): "
+                    f'Money main table boundaries found: {self.main_table_start_row}, {self.main_table_stop_row}')
+
+    def _extract_main_table_summ_values(self):
+        if self.main_table_total_row:
+            cell_credit_summ = self.sheet.cell(row=self.main_table_total_row,
+                                               column=MONEY_MAIN_TABLE_CREDIT_SUMM_COLUMN)
+            cell_debet_summ = self.sheet.cell(row=self.main_table_total_row,
+                                              column=MONEY_MAIN_TABLE_DEBET_SUMM_COLUMN)
+            cell_nds_summ = self.sheet.cell(row=self.main_table_total_row,
+                                            column=MONEY_MAIN_TABLE_NDS_SUMM_COLUMN)
+            cell_saldo_summ = self.sheet.cell(row=self.main_table_total_row,
+                                              column=MONEY_MAIN_TABLE_SALDO_SUMM_COLUMN)
+
+            self.main_table_credit_summ = float(ifnull(cell_credit_summ.value, 0))
+            self.main_table_debet_summ = float(ifnull(cell_debet_summ.value, 0))
+            self.main_table_nds_summ = float(ifnull(cell_nds_summ.value, 0))
+            self.main_table_saldo_summ = float(ifnull(cell_saldo_summ.value, 0))
+
+            logger.info(f"{self.class_name}._extract_main_table_summ_values(): "
+                        f'Money main table summ values found: {self.main_table_credit_summ}, '
+                        f'{self.main_table_debet_summ}, {self.main_table_nds_summ}, '
+                        f'{self.main_table_saldo_summ}')
+        else:
+            logger.error(f"{self.class_name}._extract_main_table_summ_values(): "
+                         f"No money main table total row defined")
+            raise Exception("No money main table total row defined")
+
+    def _find_fees_fines_table_boundaries(self):
+
+        if self.main_table_stop_row and self.stop_row:
+
+            for i in range(self.main_table_stop_row, self.stop_row):
+                cell = self.sheet.cell(row=i, column=self.start_column)
+
+                if cell.value == MONEY_FEES_FINES_TABLE_START_STR1:
+                    cell_next = self.sheet.cell(row=i+1, column=self.start_column)
+                    if cell_next.value == MONEY_FEES_FINES_TABLE_START_STR2:
+                        self.fees_fines_table_start_row = cell_next.row + 1
+                        break
+
+            for i in range(self.fees_fines_table_start_row, self.stop_row):
+                cell = self.sheet.cell(row=i, column=self.start_column)
+
+                if cell.value == MONEY_FEES_FINES_TABLE_STOP_STR:
+                    self.fees_fines_table_total_row = cell.row
+                    self.fees_fines_table_stop_row = cell.row - 1
+                    break
+
+        else:
+            logger.error(f"{self.class_name}._find_fees_fines_table_boundaries(): "
+                         f"No money start or/and stop row(s) defined")
+            raise Exception('No money start or/and stop row(s) defined')
+
+        logger.info(f"{self.class_name}._find_fees_fines_table_boundaries(): "
+                    f'Money fees and fines table boundaries found: {self.fees_fines_table_start_row}, '
+                    f'{self.fees_fines_table_stop_row}')
+
+    def _extract_fees_fines_table_summ_value(self):
+        if self.fees_fines_table_total_row:
+            cell_fee_summ = self.sheet.cell(row=self.fees_fines_table_total_row,
+                                            column=MONEY_FEES_FINES_TABLE_FEE_SUMM_COLUMN)
+
+            self.fees_fines_table_fee_summ = float(ifnull(cell_fee_summ.value, 0))
+
+            logger.info(f"{self.class_name}._extract_fees_fines_table_summ_value(): "
+                        f"Money fees and fines table summ value found: {self.fees_fines_table_fee_summ}")
+        else:
+            logger.error(f"{self.class_name}._extract_fees_fines_table_summ_value(): "
+                         f"No money fees and fines table total row defined")
+            raise Exception("No money fees and fines table total row defined")
