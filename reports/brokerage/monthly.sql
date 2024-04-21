@@ -27,3 +27,5 @@ select * from reports.brokerage_monthly bm
 select * from reports.brokerage_monthly bm
   left join reports.brokerage_monthly_money bmm on bmm.report_id  = bm.id
   left join reports.brokerage_monthly_money_fee bmf on bmf.money_id = bmm.id
+  
+  

@@ -4,7 +4,7 @@ from core import *
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, Integer, String, DateTime, Numeric, DOUBLE_PRECISION, Date
+from sqlalchemy import Column, Integer, String, DateTime, Numeric, DOUBLE_PRECISION, Date, Boolean
 from sqlalchemy.sql import func
 from db import Base
 from datetime import datetime
@@ -123,22 +123,36 @@ class BrokerageMonthlyMoney(Base):
     id = Column(Integer, primary_key=True)
     report_id = Column(Integer, ForeignKey(f'{SCHEMA_NAME}.brokerage_monthly.id'), unique=True)
 
-    total_sum_begin_rub = Column(Numeric(19, 6))
-    total_sum_end_rub = Column(Numeric(19, 6))
-    operations_credit_summ = Column(Numeric(19, 6))
-    operations_debet_summ = Column(Numeric(19, 6))
-    operations_nds_summ = Column(Numeric(19, 6))
-    operations_saldo_summ = Column(Numeric(19, 6))
+    chapter_operations = Column(Boolean, nullable=False)
+    chapter_fees = Column(Boolean, nullable=False)
 
-    fee_summ = Column(Numeric(19, 6))
+    total_sum_begin_rub = Column(Numeric(19, 6), nullable=False)
+    total_sum_end_rub = Column(Numeric(19, 6), nullable=False)
+    operations_credit_summ = Column(Numeric(19, 6), nullable=False)
+    operations_debet_summ = Column(Numeric(19, 6), nullable=False)
+    operations_nds_summ = Column(Numeric(19, 6), nullable=False)
+    operations_saldo_summ = Column(Numeric(19, 6), nullable=False)
+
+    fee_summ = Column(Numeric(19, 6), nullable=False)
 
     inserted = Column(DateTime(), server_default=func.now())
     updated = Column(DateTime(), onupdate=func.now())
 
-    def __init__(self, sheet):
+    def __init__(self, sheet, chapter_operations: bool, chapter_fees: bool):
         self.class_name = self.__class__.__name__
         self.sheet = sheet
+        self.chapter_operations: bool = chapter_operations
+        self.chapter_fees: bool = chapter_fees
         self.start_column = EXCEL_START_COLUMN
+
+        self.total_sum_begin_rub = 0
+        self.total_sum_end_rub = 0
+        self.operations_credit_summ = 0
+        self.operations_debet_summ = 0
+        self.operations_nds_summ = 0
+        self.operations_saldo_summ = 0
+        self.fee_summ = 0
+
         self.start_row: int | None = None
         self.stop_row: int | None = None
 
