@@ -19,11 +19,14 @@ MAX_EXCEL_ROWS_NUM = 20000
 EXCEL_START_COLUMN = 2
 
 SCHEMA_NAME = 'reports'
-STOP_REPORT_STR = 'Владелец: ООО "Компания БКС"'
+STOP_REPORT_STR = '(1*) - оплата проводится со своего (клиента) счета'
 
+BROKERAGE_MONTHLY_MONEY_MARKER = '1. Движение денежных средств'
 BROKERAGE_MONTHLY_MONEY_MARKER1 = 'Итого по валюте Рубль:'
 # BROKERAGE_MONTHLY_MONEY_MARKER2 = '"-" - задолженность клиента перед компанией(17*)'
 BROKERAGE_MONTHLY_DEALS_MARKER = '2.1. Сделки:'
+BROKERAGE_MONTHLY_SECURITIES_MARKER = '3. Активы:'
+BROKERAGE_MONTHLY_SECURITIES_TRANSACTIONS_MARKER = '4. Движение Ценных бумаг'
 
 logger = Logger('brokerage_monthly', st.APPLICATION_LOG, write_to_stdout=st.DEBUG_MODE).get()
 
@@ -60,20 +63,39 @@ class BrokerageMonthly(Base):
         self.workbook = load_workbook(self.report_path)
         self.sheet = self.workbook[self.workbook.sheetnames[0]]
 
-        self.chapter_money_operations = False
-        self.chapter_money_fees = False
-        self.chapter_deals = False
+        self.chapter_money_start_pos: int = 0
+        self.chapter_money_stop_pos: int = 0
+        self.chapter_money_operations: bool = False
+        self.chapter_money_fees: bool = False
+
+        self.chapter_deals: bool = False
+        self.chapter_deals_start_pos: int = 0
+        self.chapter_deals_stop_pos: int = 0
+
+        self.chapter_securities_start_pos: int = 0
+        self.chapter_securities_stop_pos: int = 0
+
+        self.chapter_securities_transactions_start_pos: int = 0
+        self.chapter_securities_transactions_stop_pos: int = 0
 
         self._extract_year_and_month()
 
         self._detect_chapters()
 
-        self.money = BrokerageMonthlyMoney(self.sheet, self.chapter_money_operations, self.chapter_money_fees)
+        self.money = BrokerageMonthlyMoney(self.sheet,
+                                           self.chapter_money_start_pos,
+                                           self.chapter_money_stop_pos,
+                                           self.chapter_money_operations,
+                                           self.chapter_money_fees)
 
         if self.chapter_deals:
-            self.deals = BrokerageMonthlyDeals(self.sheet)
+            self.deals = BrokerageMonthlyDeals(self.sheet,
+                                               self.chapter_deals_start_pos,
+                                               self.chapter_deals_stop_pos)
 
-        self.securities = BrokerageMonthlySecurities(self.sheet)
+        self.securities = BrokerageMonthlySecurities(self.sheet,
+                                                     self.chapter_securities_start_pos,
+                                                     self.chapter_securities_stop_pos)
 
         # self.securities_transactions = SecuritiesTransactions(self.sheet)
 
@@ -97,10 +119,37 @@ class BrokerageMonthly(Base):
             if cell.value == BROKERAGE_MONTHLY_MONEY_MARKER1:
                 money_marker1_occurrences += 1
 
+                # if self.chapter_money_stop_pos == 0:
+                self.chapter_money_stop_pos = cell.row
+
+            if cell.value == BROKERAGE_MONTHLY_MONEY_MARKER:
+                self.chapter_money_start_pos = cell.row
+
             if cell.value == BROKERAGE_MONTHLY_DEALS_MARKER:
                 self.chapter_deals = True
+                self.chapter_deals_start_pos = cell.row
+
+                if self.chapter_money_stop_pos == 0:
+                    self.chapter_money_stop_pos = cell.row - 1
+
                 logger.info(f"{self.class_name}._detect_chapters(): "
                             f"chapter_deals was found")
+
+            if cell.value == BROKERAGE_MONTHLY_SECURITIES_MARKER:
+                self.chapter_securities_start_pos = cell.row
+
+                if self.chapter_deals:
+                    self.chapter_deals_stop_pos = cell.row - 1
+
+                if self.chapter_money_stop_pos == 0:
+                    self.chapter_money_stop_pos = cell.row - 1
+
+            if cell.value == BROKERAGE_MONTHLY_SECURITIES_TRANSACTIONS_MARKER:
+                self.chapter_securities_stop_pos = cell.row - 1
+                self.chapter_securities_transactions_start_pos = cell.row
+
+            if cell.value == STOP_REPORT_STR:
+                self.chapter_securities_transactions_stop_pos = cell.row - 1
 
         if money_marker1_occurrences == 0:
             self.chapter_money_operations = False

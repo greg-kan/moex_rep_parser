@@ -99,18 +99,19 @@ class BrokerageMonthlySecurities(Base):
     inserted = Column(DateTime(), server_default=func.now())
     updated = Column(DateTime(), onupdate=func.now())
 
-    def __init__(self, sheet):
+    def __init__(self, sheet, start_pos: int, stop_pos: int):
         self.class_name = self.__class__.__name__
         self.sheet = sheet
         self.start_column = EXCEL_START_COLUMN
-        self.start_row: int | None = None
-        self.stop_row: int | None = None
+        self.start_row: int = start_pos
+        self.stop_row: int = stop_pos
         self.portfolio_total_row: int | None = None
         self.table_start_row: int | None = None
         self.table_stop_row: int | None = None
         self.table_total_row: int | None = None
 
-        self._find_boundaries()
+        # self._find_boundaries()
+        self._check_boundaries()
         self._find_portfolio_total_row()
         self._extract_total_portfolio_values_rub()
         self._find_table_boundaries()
@@ -122,33 +123,42 @@ class BrokerageMonthlySecurities(Base):
         return (f"<BrokerageMonthlySecurities({self.portfolio_total_value_begin_rub}, "
                 f"{self.portfolio_total_value_end_rub})>")
 
-    def _find_boundaries(self):
-        for i in range(1, MAX_EXCEL_ROWS_NUM + 1):
-            cell = self.sheet.cell(row=i, column=self.start_column)
-            if cell.value == SECURITIES_START_STR:
-                self.start_row = cell.row
-                break
-
-        if self.start_row:
-            for i in range(self.start_row, MAX_EXCEL_ROWS_NUM + 1):
-                cell = self.sheet.cell(row=i, column=self.start_column)
-                if cell.value == SECURITIES_STOP_STR:
-                    self.stop_row = cell.row - 1
-                    break
+    def _check_boundaries(self):
+        if self.start_row and self.stop_row:
+            logger.info(f"{self.class_name}._check_boundaries(): "
+                        f'Securities boundaries found: {self.start_row}, {self.stop_row}')
         else:
-            logger.error(f"{self.class_name}._find_boundaries(): "
-                         f"Could not find a Securities start row index")
+            logger.error(f"{self.class_name}._check_boundaries(): "
+                         f"Securities boundaries not found")
+            raise Exception('Securities boundaries not found')
 
-            raise Exception('Could not find a Securities start row index')
-
-        if not self.stop_row:
-            logger.error(f"{self.class_name}._find_boundaries(): "
-                         f"Could not find a Securities stop row index")
-
-            raise Exception('Could not find a Securities stop row index')
-
-        logger.info(f"{self.class_name}._find_boundaries(): "
-                    f'Securities boundaries found: {self.start_row}, {self.stop_row}')
+    # def _find_boundaries(self):
+    #     for i in range(1, MAX_EXCEL_ROWS_NUM + 1):
+    #         cell = self.sheet.cell(row=i, column=self.start_column)
+    #         if cell.value == SECURITIES_START_STR:
+    #             self.start_row = cell.row
+    #             break
+    #
+    #     if self.start_row:
+    #         for i in range(self.start_row, MAX_EXCEL_ROWS_NUM + 1):
+    #             cell = self.sheet.cell(row=i, column=self.start_column)
+    #             if cell.value == SECURITIES_STOP_STR:
+    #                 self.stop_row = cell.row - 1
+    #                 break
+    #     else:
+    #         logger.error(f"{self.class_name}._find_boundaries(): "
+    #                      f"Could not find a Securities start row index")
+    #
+    #         raise Exception('Could not find a Securities start row index')
+    #
+    #     if not self.stop_row:
+    #         logger.error(f"{self.class_name}._find_boundaries(): "
+    #                      f"Could not find a Securities stop row index")
+    #
+    #         raise Exception('Could not find a Securities stop row index')
+    #
+    #     logger.info(f"{self.class_name}._find_boundaries(): "
+    #                 f'Securities boundaries found: {self.start_row}, {self.stop_row}')
 
     def _find_portfolio_total_row(self):
         if self.start_row and self.stop_row:

@@ -22,29 +22,29 @@ def routine():
     Base.metadata.create_all(engine)
     session = Session(bind=engine)
 
-    # Just one report
-    brokerage = BrokerageMonthly(report_path)
-    print(brokerage.securities.report)
-    print(brokerage.money.operations[0].money)
-    session.add(brokerage)
-    # End of just one report
+    # # Just one report
+    # brokerage = BrokerageMonthly(report_path)
+    # print(brokerage.securities.report)
+    # print(brokerage.money.operations[0].money)
+    # session.add(brokerage)
+    # # End of just one report
 
-    # # The test on all files
-    # lst_files = os.listdir(reports_dir)
-    # for fl in sorted(lst_files):
-    #     if get_file_extension(fl) == '.xlsx':
-    #         rep_path = reports_dir / fl
-    #         print(rep_path)
-    #         print()
-    #
-    #         brokerage = BrokerageMonthly(rep_path)
-    #         print(brokerage.securities.report)
-    #         print(brokerage.money.operations[0].money)
-    #         session.add(brokerage)
-    #
-    #         print()
-    #         print()
-    # # End of the test on all files
+    # The test on all files
+    lst_files = os.listdir(reports_dir)
+    for fl in sorted(lst_files):
+        if get_file_extension(fl) == '.xlsx':
+            rep_path = reports_dir / fl
+            print(rep_path)
+            print()
+
+            brokerage = BrokerageMonthly(rep_path)
+            print(brokerage.securities.report)
+            print(brokerage.money.operations[0].money)
+            session.add(brokerage)
+
+            print()
+            print()
+    # End of the test on all files
 
     session.commit()
 
