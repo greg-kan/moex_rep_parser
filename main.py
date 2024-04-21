@@ -39,7 +39,9 @@ def routine():
 
             brokerage = BrokerageMonthly(rep_path)
             print(brokerage.securities.report)
-            print(brokerage.money.operations[0].money)
+            print(len(brokerage.money.operations))
+            if len(brokerage.money.operations) > 0:
+                print(brokerage.money.operations[0].money)
             session.add(brokerage)
 
             print()
