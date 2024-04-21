@@ -30,11 +30,11 @@ MONEY_OPERATIONS_TABLE_DEBET_SUMM_COLUMN = 8
 MONEY_OPERATIONS_TABLE_NDS_SUMM_COLUMN = 9
 MONEY_OPERATIONS_TABLE_SALDO_SUMM_COLUMN = 10
 
-MONEY_FEES_FINES_TABLE_START_STR1 = 'Рубль'
-MONEY_FEES_FINES_TABLE_START_STR2 = 'Вид сбора/штрафа'
-MONEY_FEES_FINES_TABLE_STOP_STR = 'Итого по валюте Рубль:'
+MONEY_FEES_TABLE_START_STR1 = 'Рубль'
+MONEY_FEES_TABLE_START_STR2 = 'Вид сбора/штрафа'
+MONEY_FEES_TABLE_STOP_STR = 'Итого по валюте Рубль:'
 
-MONEY_FEES_FINES_TABLE_FEE_SUMM_COLUMN = 6
+MONEY_FEES_TABLE_FEE_SUMM_COLUMN = 6
 
 logger = Logger('brokerage_monthly_money', st.APPLICATION_LOG, write_to_stdout=st.DEBUG_MODE).get()
 
@@ -54,6 +54,18 @@ class BrokerageMonthlyMoneyFee(Base):
 
     inserted = Column(DateTime(), server_default=func.now())
     updated = Column(DateTime(), onupdate=func.now())
+
+    def __init__(self, fee_name: str, amount: float | None, nds: float | None, platform: str | None):
+
+        self.class_name = self.__class__.__name__
+
+        self.fee_name = fee_name
+        self.amount = amount
+        self.nds = nds
+        self.platform = platform
+
+    def __repr__(self):
+        return f"<BrokerageMonthlyMoneyFee({self.fee_name}, {self.amount})>"
 
 
 class BrokerageMonthlyMoneyOperation(Base):
@@ -137,22 +149,22 @@ class BrokerageMonthlyMoney(Base):
         self.oper_table_stop_row: int | None = None
         self.oper_table_total_row: int | None = None
 
-        self.fees_fines_table_start_row: int | None = None
-        self.fees_fines_table_stop_row: int | None = None
-        self.fees_fines_table_total_row: int | None = None
+        self.fees_table_start_row: int | None = None
+        self.fees_table_stop_row: int | None = None
+        self.fees_table_total_row: int | None = None
 
         self._find_boundaries()
         self._find_total_rows()
         self._extract_total_sums_rub()
         self._find_oper_table_boundaries()
         self._extract_oper_table_summ_values()
-        self._find_fees_fines_table_boundaries()
-        self._extract_fees_fines_table_summ_value()
+        self._find_fees_table_boundaries()
+        self._extract_fees_table_summ_value()
 
         self._load_oper_table()
         self._check_all_oper_table_summs(6)
-        self._load_fees_fines_table()
-        self._check_all_fees_fines_table_summs(6)
+        self._load_fees_table()
+        self._check_all_fees_table_summs(6)
 
     def __repr__(self):
         return (f"<BrokerageMonthlyMoney({self.total_sum_begin_rub}, "
@@ -291,49 +303,49 @@ class BrokerageMonthlyMoney(Base):
                          f"No money oper table total row defined")
             raise Exception("No money oper table total row defined")
 
-    def _find_fees_fines_table_boundaries(self):
+    def _find_fees_table_boundaries(self):
 
         if self.oper_table_stop_row and self.stop_row:
 
             for i in range(self.oper_table_stop_row, self.stop_row + 1):
                 cell = self.sheet.cell(row=i, column=self.start_column)
 
-                if cell.value == MONEY_FEES_FINES_TABLE_START_STR1:
+                if cell.value == MONEY_FEES_TABLE_START_STR1:
                     cell_next = self.sheet.cell(row=i+1, column=self.start_column)
-                    if cell_next.value == MONEY_FEES_FINES_TABLE_START_STR2:
-                        self.fees_fines_table_start_row = cell_next.row + 1
+                    if cell_next.value == MONEY_FEES_TABLE_START_STR2:
+                        self.fees_table_start_row = cell_next.row + 1
                         break
 
-            for i in range(self.fees_fines_table_start_row, self.stop_row + 1):
+            for i in range(self.fees_table_start_row, self.stop_row + 1):
                 cell = self.sheet.cell(row=i, column=self.start_column)
 
-                if cell.value == MONEY_FEES_FINES_TABLE_STOP_STR:
-                    self.fees_fines_table_total_row = cell.row
-                    self.fees_fines_table_stop_row = cell.row - 1
+                if cell.value == MONEY_FEES_TABLE_STOP_STR:
+                    self.fees_table_total_row = cell.row
+                    self.fees_table_stop_row = cell.row - 1
                     break
 
         else:
-            logger.error(f"{self.class_name}._find_fees_fines_table_boundaries(): "
+            logger.error(f"{self.class_name}._find_fees_table_boundaries(): "
                          f"No money start or/and stop row(s) defined")
             raise Exception('No money start or/and stop row(s) defined')
 
-        logger.info(f"{self.class_name}._find_fees_fines_table_boundaries(): "
-                    f'Money fees and fines table boundaries found: {self.fees_fines_table_start_row}, '
-                    f'{self.fees_fines_table_stop_row}')
+        logger.info(f"{self.class_name}._find_fees_table_boundaries(): "
+                    f'Money fees table boundaries found: {self.fees_table_start_row}, '
+                    f'{self.fees_table_stop_row}')
 
-    def _extract_fees_fines_table_summ_value(self):
-        if self.fees_fines_table_total_row:
-            cell_fee_summ = self.sheet.cell(row=self.fees_fines_table_total_row,
-                                            column=MONEY_FEES_FINES_TABLE_FEE_SUMM_COLUMN)
+    def _extract_fees_table_summ_value(self):
+        if self.fees_table_total_row:
+            cell_fee_summ = self.sheet.cell(row=self.fees_table_total_row,
+                                            column=MONEY_FEES_TABLE_FEE_SUMM_COLUMN)
 
             self.fee_summ = float(ifnull(cell_fee_summ.value, 0))
 
-            logger.info(f"{self.class_name}._extract_fees_fines_table_summ_value(): "
-                        f"Money fees and fines table summ value found: {self.fee_summ}")
+            logger.info(f"{self.class_name}._extract_fees_table_summ_value(): "
+                        f"Money fees table summ value found: {self.fee_summ}")
         else:
-            logger.error(f"{self.class_name}._extract_fees_fines_table_summ_value(): "
-                         f"No money fees and fines table total row defined")
-            raise Exception("No money fees and fines table total row defined")
+            logger.error(f"{self.class_name}._extract_fees_table_summ_value(): "
+                         f"No money fees table total row defined")
+            raise Exception("No money fees table total row defined")
 
     def _load_oper_table(self):
 
@@ -433,17 +445,52 @@ class BrokerageMonthlyMoney(Base):
                          f"The portfolio balance has not converged")
             raise Exception('The portfolio balance has not converged')
 
-    def _load_fees_fines_table(self):
-        if self.fees_fines_table_start_row and self.fees_fines_table_stop_row:
-            pass
+    def _load_fees_table(self):
+        if self.fees_table_start_row and self.fees_table_stop_row:
+
+            for i in range(self.fees_table_start_row, self.fees_table_stop_row + 1):
+
+                cell = self.sheet.cell(row=i, column=2)
+                if not cell.value:
+                    raise Exception('Operation name must not be None')
+
+                fee_name: str = cell.value
+
+                cell = self.sheet.cell(row=i, column=6)
+                amount: float | None = tofloat(cell.value)
+
+                cell = self.sheet.cell(row=i, column=8)
+                nds: float | None = tofloat(cell.value)
+
+                cell = self.sheet.cell(row=i, column=9)
+                platform: str = cell.value
+
+                fee = BrokerageMonthlyMoneyFee(fee_name, amount, nds, platform)
+
+                self.fees.append(fee)
+
+            logger.info(f"{self.class_name}.load_fees_table(): "
+                        f"{len(self.fees)} Money fees loaded")
 
         else:
-            logger.error(f"{self.class_name}._load_fees_fines_table(): "
-                         f"No fees and fines table start or/and stop row(s) defined")
-            raise Exception('No fees and fines table start or/and stop row(s) defined')
+            logger.error(f"{self.class_name}._load_fees_table(): "
+                         f"No fees table start or/and stop row(s) defined")
+            raise Exception('No fees table start or/and stop row(s) defined')
 
-        logger.info(f"{self.class_name}._load_fees_fines_table(): "
-                    f'Fees and fines table successfully loaded')
+        logger.info(f"{self.class_name}._load_fees_table(): "
+                    f'Fees table successfully loaded')
 
-    def _check_all_fees_fines_table_summs(self, precision):
-        pass
+    def _check_all_fees_table_summs(self, precision):
+        _table_summ_amount: float = 0
+
+        for fee in self.fees:
+            if fee.amount:
+                _table_summ_amount += fee.amount
+
+        if round(_table_summ_amount, precision) == round(self.fee_summ, precision):
+            logger.info(f"{self.class_name}._check_all_fees_table_summs(): "
+                        f"Summs in total row correspond summs of all rows")
+        else:
+            logger.error(f"{self.class_name}._check_all_fees_table_summs(): "
+                         f"Summs in total row do not mach summs of all rows")
+            raise Exception("Summs in total row do not mach summs of all rows")
