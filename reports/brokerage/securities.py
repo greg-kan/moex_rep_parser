@@ -123,14 +123,14 @@ class BrokerageMonthlySecurities(Base):
                 f"{self.portfolio_total_value_end_rub})>")
 
     def _find_boundaries(self):
-        for i in range(1, MAX_EXCEL_ROWS_NUM):
+        for i in range(1, MAX_EXCEL_ROWS_NUM + 1):
             cell = self.sheet.cell(row=i, column=self.start_column)
             if cell.value == SECURITIES_START_STR:
                 self.start_row = cell.row
                 break
 
         if self.start_row:
-            for i in range(self.start_row, MAX_EXCEL_ROWS_NUM):
+            for i in range(self.start_row, MAX_EXCEL_ROWS_NUM + 1):
                 cell = self.sheet.cell(row=i, column=self.start_column)
                 if cell.value == SECURITIES_STOP_STR:
                     self.stop_row = cell.row - 1
@@ -152,7 +152,7 @@ class BrokerageMonthlySecurities(Base):
 
     def _find_portfolio_total_row(self):
         if self.start_row and self.stop_row:
-            for i in range(self.start_row, self.stop_row):
+            for i in range(self.start_row, self.stop_row + 1):
                 cell = self.sheet.cell(row=i, column=self.start_column)
                 if cell.value == SECURITIES_PORTFOLIO_TOTAL_STR:
                     self.portfolio_total_row = cell.row
@@ -185,14 +185,14 @@ class BrokerageMonthlySecurities(Base):
 
     def _find_table_boundaries(self):
         if self.start_row and self.stop_row:
-            for i in range(self.start_row, self.stop_row):
+            for i in range(self.start_row, self.stop_row + 1):
                 cell = self.sheet.cell(row=i, column=self.start_column)
 
                 if cell.value == SECURITIES_TABLE_START_STR:
                     self.table_start_row = cell.row + 1
                     break
 
-            for i in range(self.start_row, self.stop_row):
+            for i in range(self.start_row, self.stop_row + 1):
                 cell = self.sheet.cell(row=i, column=self.start_column)
 
                 if cell.value == SECURITIES_TABLE_STOP_STR:
@@ -236,7 +236,7 @@ class BrokerageMonthlySecurities(Base):
     def _load_securities_table(self):
         if self.table_start_row and self.table_stop_row:
             # self.securities.clear()
-            for i in range(self.table_start_row, self.table_stop_row):
+            for i in range(self.table_start_row, self.table_stop_row + 1):
                 cell = self.sheet.cell(row=i, column=2)
                 if not cell.value:
                     raise Exception('secid value must not be None')
@@ -311,29 +311,29 @@ class BrokerageMonthlySecurities(Base):
                          f"Summs in total portfolio table do not mach total summs in a detailed table")
             raise Exception('Summs in total portfolio table do not mach total summs in a detailed table')
 
-        table_summ_nkd_begin: float = 0
-        table_summ_including_nkd_begin: float = 0
-        table_summ_nkd_end: float = 0
-        table_summ_including_nkd_end: float = 0
+        _table_summ_nkd_begin: float = 0
+        _table_summ_including_nkd_begin: float = 0
+        _table_summ_nkd_end: float = 0
+        _table_summ_including_nkd_end: float = 0
 
         for sec in self.securities:
             if sec.summ_nkd_begin:
-                table_summ_nkd_begin += sec.summ_nkd_begin
+                _table_summ_nkd_begin += sec.summ_nkd_begin
             if sec.summ_including_nkd_begin:
-                table_summ_including_nkd_begin += sec.summ_including_nkd_begin
+                _table_summ_including_nkd_begin += sec.summ_including_nkd_begin
             if sec.summ_nkd_end:
-                table_summ_nkd_end += sec.summ_nkd_end
+                _table_summ_nkd_end += sec.summ_nkd_end
             if sec.summ_including_nkd_end:
-                table_summ_including_nkd_end += sec.summ_including_nkd_end
+                _table_summ_including_nkd_end += sec.summ_including_nkd_end
 
         logger.info(f"{self.class_name}._check_all_securities_summs(): "
-                    f"Calculated summs: {table_summ_nkd_begin}, {table_summ_including_nkd_begin}, "
-                    f"{table_summ_nkd_end}, {table_summ_including_nkd_end}")
+                    f"Calculated summs: {_table_summ_nkd_begin}, {_table_summ_including_nkd_begin}, "
+                    f"{_table_summ_nkd_end}, {_table_summ_including_nkd_end}")
 
-        if round(table_summ_nkd_begin, precision) == round(self.table_summ_nkd_begin, precision) and \
-           round(table_summ_including_nkd_begin, precision) == round(self.table_summ_including_nkd_begin, precision) and \
-           round(table_summ_nkd_end, precision) == round(self.table_summ_nkd_end, precision) and \
-           round(table_summ_including_nkd_end, precision) == round(self.table_summ_including_nkd_end, precision):
+        if round(_table_summ_nkd_begin, precision) == round(self.table_summ_nkd_begin, precision) and \
+           round(_table_summ_including_nkd_begin, precision) == round(self.table_summ_including_nkd_begin, precision) and \
+           round(_table_summ_nkd_end, precision) == round(self.table_summ_nkd_end, precision) and \
+           round(_table_summ_including_nkd_end, precision) == round(self.table_summ_including_nkd_end, precision):
             logger.info(f"{self.class_name}._check_all_securities_summs(): "
                         f"Summs in total row correspond summs of all rows")
         else:

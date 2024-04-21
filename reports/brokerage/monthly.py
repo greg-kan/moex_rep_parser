@@ -25,7 +25,10 @@ class BrokerageMonthly(Base):
     __table_args__ = {"schema": SCHEMA_NAME}
 
     id = Column(Integer, primary_key=True)
+    money = relationship("BrokerageMonthlyMoney", uselist=False, backref="report")
+    # deals
     securities = relationship("BrokerageMonthlySecurities", uselist=False, backref="report")
+    # securities_transactions
 
     report_path = Column(String, nullable=False)
     year = Column(Integer, nullable=False)
@@ -48,7 +51,7 @@ class BrokerageMonthly(Base):
 
         self.money = BrokerageMonthlyMoney(self.sheet)
         # self.deals = Deals(self.sheet)
-        # self.securities = BrokerageMonthlySecurities(self.sheet)
+        self.securities = BrokerageMonthlySecurities(self.sheet)
         # self.securities_transactions = SecuritiesTransactions(self.sheet)
 
     def __repr__(self):
