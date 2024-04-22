@@ -143,6 +143,9 @@ class BrokerageMonthlyMoney(Base):
     def __init__(self, sheet, start_pos: int, stop_pos: int, chapter_operations: bool, chapter_fees: bool):
         self.class_name = self.__class__.__name__
         self.sheet = sheet
+        self.start_row: int = start_pos
+        self.stop_row: int = stop_pos
+
         self.chapter_operations: bool = chapter_operations
         self.chapter_fees: bool = chapter_fees
         self.start_column = EXCEL_START_COLUMN
@@ -154,9 +157,6 @@ class BrokerageMonthlyMoney(Base):
         self.operations_nds_summ = 0
         self.operations_saldo_summ = 0
         self.fee_summ = 0
-
-        self.start_row: int = start_pos
-        self.stop_row: int = stop_pos
 
         self.total_row_begin: int | None = None
         self.total_row_end: int | None = None

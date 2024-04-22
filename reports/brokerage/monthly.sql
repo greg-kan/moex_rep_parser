@@ -8,6 +8,8 @@
 --drop table reports.brokerage_monthly_money;
 --drop table reports.brokerage_monthly_operation;
 
+drop table reports.brokerage_monthly_transaction;
+drop table reports.brokerage_monthly_transactions;
 drop table reports.brokerage_monthly_money_fee;
 drop table reports.brokerage_monthly_money_operation;
 drop table reports.brokerage_monthly_money;

@@ -11,9 +11,10 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from sqlalchemy.sql import func
 from db import Base
 
-from reports.brokerage.securities import BrokerageMonthlySecurities
 from reports.brokerage.money import BrokerageMonthlyMoney
 from reports.brokerage.deals import BrokerageMonthlyDeals
+from reports.brokerage.securities import BrokerageMonthlySecurities
+from reports.brokerage.transactions import BrokerageMonthlyTransactions
 
 MAX_EXCEL_ROWS_NUM = 20000
 EXCEL_START_COLUMN = 2
@@ -26,7 +27,7 @@ BROKERAGE_MONTHLY_MONEY_MARKER1 = 'Итого по валюте Рубль:'
 # BROKERAGE_MONTHLY_MONEY_MARKER2 = '"-" - задолженность клиента перед компанией(17*)'
 BROKERAGE_MONTHLY_DEALS_MARKER = '2.1. Сделки:'
 BROKERAGE_MONTHLY_SECURITIES_MARKER = '3. Активы:'
-BROKERAGE_MONTHLY_SECURITIES_TRANSACTIONS_MARKER = '4. Движение Ценных бумаг'
+BROKERAGE_MONTHLY_TRANSACTIONS_MARKER = '4. Движение Ценных бумаг'
 
 logger = Logger('brokerage_monthly', st.APPLICATION_LOG, write_to_stdout=st.DEBUG_MODE).get()
 
@@ -39,7 +40,7 @@ class BrokerageMonthly(Base):
     money = relationship("BrokerageMonthlyMoney", uselist=False, backref="report")
     # deals
     securities = relationship("BrokerageMonthlySecurities", uselist=False, backref="report")
-    # securities_transactions
+    transactions = relationship("BrokerageMonthlyTransactions", uselist=False, backref="report")
 
     report_path = Column(String, nullable=False)
     year = Column(Integer, nullable=False)
@@ -75,8 +76,8 @@ class BrokerageMonthly(Base):
         self.chapter_securities_start_pos: int = 0
         self.chapter_securities_stop_pos: int = 0
 
-        self.chapter_securities_transactions_start_pos: int = 0
-        self.chapter_securities_transactions_stop_pos: int = 0
+        self.chapter_transactions_start_pos: int = 0
+        self.chapter_transactions_stop_pos: int = 0
 
         self._extract_year_and_month()
 
@@ -97,7 +98,9 @@ class BrokerageMonthly(Base):
                                                      self.chapter_securities_start_pos,
                                                      self.chapter_securities_stop_pos)
 
-        # self.securities_transactions = SecuritiesTransactions(self.sheet)
+        self.transactions = BrokerageMonthlyTransactions(self.sheet,
+                                                         self.chapter_transactions_start_pos,
+                                                         self.chapter_transactions_stop_pos)
 
     def __repr__(self):
         return f"<BrokerageMonthly({self.year}, {self.month})>"
@@ -144,12 +147,12 @@ class BrokerageMonthly(Base):
                 if self.chapter_money_stop_pos == 0:
                     self.chapter_money_stop_pos = cell.row - 1
 
-            if cell.value == BROKERAGE_MONTHLY_SECURITIES_TRANSACTIONS_MARKER:
+            if cell.value == BROKERAGE_MONTHLY_TRANSACTIONS_MARKER:
                 self.chapter_securities_stop_pos = cell.row - 1
-                self.chapter_securities_transactions_start_pos = cell.row
+                self.chapter_transactions_start_pos = cell.row
 
             if cell.value == STOP_REPORT_STR:
-                self.chapter_securities_transactions_stop_pos = cell.row - 1
+                self.chapter_transactions_stop_pos = cell.row - 1
 
         if money_marker1_occurrences == 0:
             self.chapter_money_operations = False
