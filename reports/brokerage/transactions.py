@@ -19,21 +19,45 @@ SCHEMA_NAME = 'reports'
 logger = Logger('brokerage_monthly_transactions', st.APPLICATION_LOG, write_to_stdout=st.DEBUG_MODE).get()
 
 
-class BrokerageMonthlyTransaction:  # (Base)
+class BrokerageMonthlyTransaction(Base):
 
     __tablename__ = 'brokerage_monthly_transaction'
     __table_args__ = {"schema": SCHEMA_NAME}
 
-    # id = Column(Integer, primary_key=True)
-    # report_id = Column(Integer, ForeignKey(f'{SCHEMA_NAME}.brokerage_monthly.id'), unique=True)
-    #
-    # chapter_operations = Column(Boolean, nullable=False)
+    id = Column(Integer, primary_key=True)
+    transactions_id = Column(Integer, ForeignKey(f'{SCHEMA_NAME}.brokerage_monthly_transactions.id'))
+    transactions = relationship("BrokerageMonthlyTransactions", backref="transactions")
 
-    def __init__(self, security: str, trans_date: datetime):
+    security = Column(String, nullable=False)
+    trans_date = Column(Date, nullable=False)
+
+    balance = Column(DOUBLE_PRECISION)
+    credit = Column(DOUBLE_PRECISION)
+    debet = Column(DOUBLE_PRECISION)
+    saldo = Column(DOUBLE_PRECISION)
+
+    storage = Column(String)
+    note = Column(String)
+
+    inserted = Column(DateTime(), server_default=func.now())
+    updated = Column(DateTime(), onupdate=func.now())
+
+    def __init__(self, security: str, trans_date: datetime,
+                 balance: float | None, credit: float | None, debet: float | None, saldo: float | None,
+                 storage: str | None, note: str | None):
         self.class_name = self.__class__.__name__
 
         self.security = security
         self.trans_date = trans_date
+        self.balance = balance
+        self.credit = credit
+        self.debet = debet
+        self.saldo = saldo
+        self.storage = storage
+        self.note = note
+
+    def __repr__(self):
+        return f"<BrokerageMonthlyTransaction({self.security}, {self.trans_date})>"
 
 
 class BrokerageMonthlyTransactions(Base):
@@ -57,6 +81,9 @@ class BrokerageMonthlyTransactions(Base):
         self._find_table_boundaries()
         self._load_table()
         self._make_calculations()
+
+    def __repr__(self):
+        return f"<BrokerageMonthlyTransactions()>"  # TODO: {self.secid}
 
     def _find_table_boundaries(self):
         if self.start_row and self.stop_row:
@@ -92,12 +119,31 @@ class BrokerageMonthlyTransactions(Base):
                 cell = self.sheet.cell(row=i, column=5)
                 trans_date: datetime = datetime.strptime(cell.value, "%d.%m.%y")
 
-                transaction = BrokerageMonthlyTransaction(security, trans_date)
+                cell = self.sheet.cell(row=i, column=7)
+                balance: float | None = tofloat(cell.value)
 
-                # self.transactions.append(transaction)
+                cell = self.sheet.cell(row=i, column=8)
+                credit: float | None = tofloat(cell.value)
 
-            # logger.info(f"{self.class_name}._load_table(): "
-            #             f"{len(self.transactions)} transactions loaded")
+                cell = self.sheet.cell(row=i, column=9)
+                debet: float | None = tofloat(cell.value)
+
+                cell = self.sheet.cell(row=i, column=10)
+                saldo: float | None = tofloat(cell.value)
+
+                cell = self.sheet.cell(row=i, column=11)
+                storage: str | None = cell.value
+
+                cell = self.sheet.cell(row=i, column=13)
+                note: str | None = cell.value
+
+                transaction = BrokerageMonthlyTransaction(security, trans_date,
+                                                          balance, credit, debet, saldo, storage, note)
+
+                self.transactions.append(transaction)
+
+            logger.info(f"{self.class_name}._load_table(): "
+                        f"{len(self.transactions)} transactions loaded")
 
         else:
             logger.error(f"{self.class_name}._load_table(): "
@@ -108,4 +154,5 @@ class BrokerageMonthlyTransactions(Base):
                     f'Transactions table successfully loaded')
 
     def _make_calculations(self):
+        # TODO: any aggregates may be in a future...
         pass
