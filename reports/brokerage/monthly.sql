@@ -8,6 +8,7 @@
 --drop table reports.brokerage_monthly_money;
 --drop table reports.brokerage_monthly_operation;
 
+drop table reports.brokerage_monthly_deals;
 drop table reports.brokerage_monthly_transaction;
 drop table reports.brokerage_monthly_transactions;
 drop table reports.brokerage_monthly_money_fee;
@@ -34,4 +35,7 @@ select * from reports.brokerage_monthly bm
   left join reports.brokerage_monthly_transactions bmts on bmts.report_id = bm.id 
   left join reports.brokerage_monthly_transaction bmt on bmt.transactions_id = bmts.id  
   
+  
+select * from reports.brokerage_monthly bm
+  left join reports.brokerage_monthly_deals bmd on bmd.report_id = bm.id
   

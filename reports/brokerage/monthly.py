@@ -38,7 +38,7 @@ class BrokerageMonthly(Base):
 
     id = Column(Integer, primary_key=True)
     money = relationship("BrokerageMonthlyMoney", uselist=False, backref="report")
-    # deals
+    deals = relationship("BrokerageMonthlyDeals", uselist=False, backref="report")
     securities = relationship("BrokerageMonthlySecurities", uselist=False, backref="report")
     transactions = relationship("BrokerageMonthlyTransactions", uselist=False, backref="report")
 

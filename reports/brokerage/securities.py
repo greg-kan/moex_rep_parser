@@ -132,34 +132,6 @@ class BrokerageMonthlySecurities(Base):
                          f"Securities boundaries not found")
             raise Exception('Securities boundaries not found')
 
-    # def _find_boundaries(self):
-    #     for i in range(1, MAX_EXCEL_ROWS_NUM + 1):
-    #         cell = self.sheet.cell(row=i, column=self.start_column)
-    #         if cell.value == SECURITIES_START_STR:
-    #             self.start_row = cell.row
-    #             break
-    #
-    #     if self.start_row:
-    #         for i in range(self.start_row, MAX_EXCEL_ROWS_NUM + 1):
-    #             cell = self.sheet.cell(row=i, column=self.start_column)
-    #             if cell.value == SECURITIES_STOP_STR:
-    #                 self.stop_row = cell.row - 1
-    #                 break
-    #     else:
-    #         logger.error(f"{self.class_name}._find_boundaries(): "
-    #                      f"Could not find a Securities start row index")
-    #
-    #         raise Exception('Could not find a Securities start row index')
-    #
-    #     if not self.stop_row:
-    #         logger.error(f"{self.class_name}._find_boundaries(): "
-    #                      f"Could not find a Securities stop row index")
-    #
-    #         raise Exception('Could not find a Securities stop row index')
-    #
-    #     logger.info(f"{self.class_name}._find_boundaries(): "
-    #                 f'Securities boundaries found: {self.start_row}, {self.stop_row}')
-
     def _find_portfolio_total_row(self):
         if self.start_row and self.stop_row:
             for i in range(self.start_row, self.stop_row + 1):
