@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String, DateTime, Numeric, DOUBLE_PRECISION, Date, Boolean
 from sqlalchemy.sql import func
 from db import Base
-from datetime import datetime
+from datetime import date, datetime
 
 MAX_EXCEL_ROWS_NUM = 20000
 EXCEL_START_COLUMN = 2
@@ -95,7 +95,7 @@ class BrokerageMonthlyMoneyOperation(Base):
     updated = Column(DateTime(), onupdate=func.now())
 
     #
-    def __init__(self, oper_date: datetime, oper_name: str, credit: float | None,
+    def __init__(self, oper_date: date, oper_name: str, credit: float | None,
                  debet: float | None, nds: float | None, saldo: float | None,
                  warranty: float | None, deposit_margin: float | None,
                  platform: str | None, note: str | None, intermediate_clearing: str | None):
@@ -321,7 +321,7 @@ class BrokerageMonthlyMoney(Base):
                 cell = self.sheet.cell(row=i, column=2)
                 if not cell.value:
                     raise Exception('Operation date must not be None')
-                oper_date: datetime = datetime.strptime(cell.value, "%d.%m.%y")
+                oper_date: date = datetime.strptime(cell.value, "%d.%m.%y")
 
                 cell = self.sheet.cell(row=i, column=7)
                 credit: float | None = tofloat(cell.value)
