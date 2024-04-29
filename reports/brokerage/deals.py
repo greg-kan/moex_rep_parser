@@ -2,7 +2,7 @@ from logger import Logger
 import settings as st
 from core import *
 
-from datetime import datetime, date
+from datetime import datetime, date, time
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String, DateTime, Numeric, DOUBLE_PRECISION, Boolean, Date
@@ -30,35 +30,148 @@ BONDS_TABLE_START_STR2 = 'Дата'
 logger = Logger('brokerage_monthly_deals', st.APPLICATION_LOG, write_to_stdout=st.DEBUG_MODE).get()
 
 
-class BrokerageMonthlyDealsAdr:
-    def __init__(self):
+class BrokerageMonthlyDealsAdr(Base):
+
+    __tablename__ = 'brokerage_monthly_deals_adr'
+    __table_args__ = {"schema": SCHEMA_NAME}
+
+    id = Column(Integer, primary_key=True)
+    deals_id = Column(Integer, ForeignKey(f'{SCHEMA_NAME}.brokerage_monthly_deals.id'))
+    deals = relationship("BrokerageMonthlyDeals", backref="adrs")
+
+    secid = Column(String, nullable=False)
+    regnumber = Column(String)
+    isin = Column(String, nullable=False)
+    emitent = Column(String, nullable=False)
+
+    deal_date = Column(Date, nullable=False)
+    deal_num = Column(String, nullable=False)
+    deal_time = Column(String)
+    bought = Column(DOUBLE_PRECISION, nullable=False)
+    buy_price = Column(Numeric(19, 6), nullable=False)
+    buy_sum = Column(Numeric(19, 6), nullable=False)
+    sold = Column(DOUBLE_PRECISION, nullable=False)
+    sell_price = Column(Numeric(19, 6), nullable=False)
+    sell_sum = Column(Numeric(19, 6), nullable=False)
+    currency = Column(String, nullable=False)
+    currency_pay = Column(String, nullable=False)
+    commission_date = Column(Date, nullable=False)
+    commission_time = Column(DateTime, nullable=False)
+    deal_type = Column(String)
+    pay_date = Column(Date, nullable=False)
+    delivery_date = Column(Date, nullable=False)
+    platform = Column(String, nullable=False)
+    note = Column(String)
+
+    inserted = Column(DateTime(), server_default=func.now())
+    updated = Column(DateTime(), onupdate=func.now())
+
+    def __init__(self, secid: str, regnumber: str, isin: str, emitent: str, deal_date: date, deal_num: str,
+                 deal_time,
+                 bought: float, buy_price: float, buy_sum: float, sold: float, sell_price: float,
+                 sell_sum: float, currency: str, currency_pay: str, commission_date: date,
+                 commission_time: datetime, deal_type: str, pay_date: date, delivery_date: date,
+                 platform: str, note: str):
+
         self.class_name = self.__class__.__name__
 
+        self.secid = secid
+        self.regnumber = regnumber
+        self.isin = isin
+        self.emitent = emitent
+        self.deal_date = deal_date
+        self.deal_num = deal_num
+        self.deal_time = deal_time
+        self.bought = bought
+        self.buy_price = buy_price
+        self.buy_sum = buy_sum
+        self.sold = sold
+        self.sell_price = sell_price
+        self.sell_sum = sell_sum
+        self.currency = currency
+        self.currency_pay = currency_pay
+        self.commission_date = commission_date
+        self.commission_time = commission_time
+        self.deal_type = deal_type
+        self.pay_date = pay_date
+        self.delivery_date = delivery_date
+        self.platform = platform
+        self.note = note
 
-class BrokerageMonthlyDealsShare:  # (Base)
+    def __repr__(self):
+        return f"<BrokerageMonthlyDealsArd({self.secid}, {self.isin})>"
 
-    # __tablename__ = 'brokerage_monthly_deals_share'
-    # __table_args__ = {"schema": SCHEMA_NAME}
-    #
-    # id = Column(Integer, primary_key=True)
-    # deals_id = Column(Integer, ForeignKey(f'{SCHEMA_NAME}.brokerage_monthly_deals.id'))
-    # deals = relationship("BrokerageMonthlyDeals", backref="deals")
-    #
-    # secid = Column(String, nullable=False)
-    #
-    # inserted = Column(DateTime(), server_default=func.now())
-    # updated = Column(DateTime(), onupdate=func.now())
 
-    def __init__(self, secid: str, regnumber: str, isin: str, emitent: str):
+class BrokerageMonthlyDealsShare(Base):
+
+    __tablename__ = 'brokerage_monthly_deals_share'
+    __table_args__ = {"schema": SCHEMA_NAME}
+
+    id = Column(Integer, primary_key=True)
+    deals_id = Column(Integer, ForeignKey(f'{SCHEMA_NAME}.brokerage_monthly_deals.id'))
+    deals = relationship("BrokerageMonthlyDeals", backref="shares")
+
+    secid = Column(String, nullable=False)
+    regnumber = Column(String)
+    isin = Column(String, nullable=False)
+    emitent = Column(String, nullable=False)
+
+    deal_date = Column(Date, nullable=False)
+    deal_num = Column(String, nullable=False)
+    deal_time = Column(String)
+    bought = Column(DOUBLE_PRECISION, nullable=False)
+    buy_price = Column(Numeric(19, 6), nullable=False)
+    buy_sum = Column(Numeric(19, 6), nullable=False)
+    sold = Column(DOUBLE_PRECISION, nullable=False)
+    sell_price = Column(Numeric(19, 6), nullable=False)
+    sell_sum = Column(Numeric(19, 6), nullable=False)
+    currency = Column(String, nullable=False)
+    currency_pay = Column(String, nullable=False)
+    commission_date = Column(Date, nullable=False)
+    commission_time = Column(DateTime, nullable=False)
+    deal_type = Column(String)
+    pay_date = Column(Date, nullable=False)
+    delivery_date = Column(Date, nullable=False)
+    platform = Column(String, nullable=False)
+    note = Column(String)
+
+    inserted = Column(DateTime(), server_default=func.now())
+    updated = Column(DateTime(), onupdate=func.now())
+
+    def __init__(self, secid: str, regnumber: str, isin: str, emitent: str, deal_date: date, deal_num: str,
+                 deal_time,
+                 bought: float, buy_price: float, buy_sum: float, sold: float, sell_price: float,
+                 sell_sum: float, currency: str, currency_pay: str, commission_date: date,
+                 commission_time: datetime, deal_type: str, pay_date: date, delivery_date: date,
+                 platform: str, note: str):
+
         self.class_name = self.__class__.__name__
-        #
-        # self.secid = secid
-        # self.regnumber = regnumber
-        # self.isin = isin
-        # self.emitent = emitent
 
-    # def __repr__(self):
-    #     return f"<BrokerageMonthlyDealsShare({self.secid}, {self.isin})>"
+        self.secid = secid
+        self.regnumber = regnumber
+        self.isin = isin
+        self.emitent = emitent
+        self.deal_date = deal_date
+        self.deal_num = deal_num
+        self.deal_time = deal_time
+        self.bought = bought
+        self.buy_price = buy_price
+        self.buy_sum = buy_sum
+        self.sold = sold
+        self.sell_price = sell_price
+        self.sell_sum = sell_sum
+        self.currency = currency
+        self.currency_pay = currency_pay
+        self.commission_date = commission_date
+        self.commission_time = commission_time
+        self.deal_type = deal_type
+        self.pay_date = pay_date
+        self.delivery_date = delivery_date
+        self.platform = platform
+        self.note = note
+
+    def __repr__(self):
+        return f"<BrokerageMonthlyDealsShare({self.secid}, {self.isin})>"
 
 
 class BrokerageMonthlyDealsBond(Base):
@@ -70,7 +183,7 @@ class BrokerageMonthlyDealsBond(Base):
     deals = relationship("BrokerageMonthlyDeals", backref="bonds")
 
     secid = Column(String, nullable=False)
-    regnumber = Column(String, nullable=False)
+    regnumber = Column(String)
     isin = Column(String, nullable=False)
     emitent = Column(String, nullable=False)
 
@@ -92,6 +205,7 @@ class BrokerageMonthlyDealsBond(Base):
     pay_date = Column(Date, nullable=False)
     delivery_date = Column(Date, nullable=False)
     platform = Column(String, nullable=False)
+    note = Column(String)
 
     inserted = Column(DateTime(), server_default=func.now())
     updated = Column(DateTime(), onupdate=func.now())
@@ -100,7 +214,7 @@ class BrokerageMonthlyDealsBond(Base):
                  deal_time,
                  bought: float, buy_price: float, buy_sum: float, buy_nkd: float, sold: float, sell_price: float,
                  sell_sum: float, sell_nkd: float, currency: str, currency_pay: str, commission_date: date,
-                 deal_type: str, pay_date: date, delivery_date: date, platform: str):
+                 deal_type: str, pay_date: date, delivery_date: date, platform: str, note: str):
 
         self.class_name = self.__class__.__name__
 
@@ -126,6 +240,7 @@ class BrokerageMonthlyDealsBond(Base):
         self.pay_date = pay_date
         self.delivery_date = delivery_date
         self.platform = platform
+        self.note = note
 
     def __repr__(self):
         return f"<BrokerageMonthlyDealsBond({self.secid}, {self.isin})>"
@@ -259,8 +374,108 @@ class BrokerageMonthlyDeals(Base):
             raise Exception(f"Error: ADR table boundaries not found")
 
     def _load_adr_table(self):
-        pass
+        i = self.adr_table_start_row
+        while i < self.adr_table_stop_row:
+            cell = self.sheet.cell(row=i, column=self.start_column)
+            secid = cell.value
+            cell = self.sheet.cell(row=i, column=6)
+            regnumber = cell.value
+            cell = self.sheet.cell(row=i, column=8)
+            isin = cell.value
+            cell = self.sheet.cell(row=i, column=9)
+            emitent = cell.value
 
+            sec_stop = f'Итого по {secid}:'
+
+            sum_buy = 0
+            sum_sell = 0
+
+            while True:
+                i += 1
+                if i > MAX_EXCEL_ROWS_NUM:
+                    break
+
+                cell = self.sheet.cell(row=i, column=self.start_column)
+                if cell.value != sec_stop:
+                    deal_date: date = datetime.strptime(cell.value, "%d.%m.%y")
+                    cell = self.sheet.cell(row=i, column=3)
+                    deal_num = cell.value
+                    cell = self.sheet.cell(row=i, column=4)
+                    deal_time = cell.value
+
+                    cell = self.sheet.cell(row=i, column=5)
+                    bought = tofloat(ifnull(cell.value, 0))
+                    cell = self.sheet.cell(row=i, column=6)
+                    buy_price = tofloat(ifnull(cell.value, 0))
+                    cell = self.sheet.cell(row=i, column=7)
+                    buy_sum = tofloat(ifnull(cell.value, 0))
+                    sum_buy += buy_sum
+
+                    cell = self.sheet.cell(row=i, column=8)
+                    sold = tofloat(ifnull(cell.value, 0))
+                    cell = self.sheet.cell(row=i, column=9)
+                    sell_price = tofloat(ifnull(cell.value, 0))
+                    cell = self.sheet.cell(row=i, column=10)
+                    sell_sum = tofloat(ifnull(cell.value, 0))
+                    sum_sell += sell_sum
+
+                    cell = self.sheet.cell(row=i, column=11)
+                    currency = cell.value
+                    cell = self.sheet.cell(row=i, column=12)
+                    currency_pay = cell.value
+
+                    cell_date = self.sheet.cell(row=i, column=13)
+                    commission_date: date = datetime.strptime(cell_date.value, "%d.%m.%y")
+
+                    cell_time = self.sheet.cell(row=i, column=14)
+                    str_datetime = f'{cell_date.value} {cell_time.value}'
+                    commission_time: datetime = datetime.strptime(str_datetime, "%d.%m.%y %H:%M:%S")
+
+                    cell = self.sheet.cell(row=i, column=15)
+                    deal_type = cell.value
+
+                    cell = self.sheet.cell(row=i, column=16)
+                    pay_date: date = datetime.strptime(cell.value, "%d.%m.%y")
+
+                    cell = self.sheet.cell(row=i, column=17)
+                    delivery_date: date = datetime.strptime(cell.value, "%d.%m.%y")
+
+                    cell = self.sheet.cell(row=i, column=18)
+                    platform = cell.value
+
+                    cell = self.sheet.cell(row=i, column=20)
+                    note = cell.value
+
+                    adr = BrokerageMonthlyDealsAdr(secid, regnumber, isin, emitent,
+                                                   deal_date, deal_num, deal_time,
+                                                   bought, buy_price, buy_sum, sold, sell_price, sell_sum,
+                                                   currency, currency_pay, commission_date, commission_time,
+                                                   deal_type, pay_date, delivery_date, platform, note)
+                    self.adrs.append(adr)
+
+                else:
+                    cell = self.sheet.cell(row=i, column=7)
+                    summary_sum_buy = tofloat(ifnull(cell.value, 0))
+
+                    cell = self.sheet.cell(row=i, column=10)
+                    summary_sum_sell = tofloat(ifnull(cell.value, 0))
+
+                    logger.info(f"{self.class_name}._load_shares_table(): "
+                                f"Summary: {summary_sum_buy}, {summary_sum_sell}")
+
+                    if round(summary_sum_buy, 6) == round(sum_buy, 6) and \
+                       round(summary_sum_sell, 6) == round(sum_sell, 6):
+                        logger.info(f"{self.class_name}._load_shares_table(): "
+                                    f"Summaries are match calculations. It is good!")
+
+                    else:
+                        logger.error(f"{self.class_name}._load_shares_table(): "
+                                     f"Summaries are not match calculations. It is bad!")
+                        raise Exception("Summaries are not match calculations. It is bad!")
+
+                    break
+
+            i += 1
     def _find_shares_table_boundaries(self):
         for i in range(self.shares_start_row, self.shares_stop_row + 1):
             cell = self.sheet.cell(row=i, column=self.start_column)
@@ -282,22 +497,105 @@ class BrokerageMonthlyDeals(Base):
             raise Exception(f"Error: Shares table boundaries not found")
 
     def _load_shares_table(self):
-
         i = self.shares_table_start_row
         while i < self.shares_table_stop_row:
             cell = self.sheet.cell(row=i, column=self.start_column)
-            sec = cell.value
-            sec_stop = f'Итого по {sec}:'
-            # load title topn string
+            secid = cell.value
+            cell = self.sheet.cell(row=i, column=6)
+            regnumber = cell.value
+            cell = self.sheet.cell(row=i, column=8)
+            isin = cell.value
+            cell = self.sheet.cell(row=i, column=9)
+            emitent = cell.value
+
+            sec_stop = f'Итого по {secid}:'
+
+            sum_buy = 0
+            sum_sell = 0
+
             while True:
                 i += 1
-                cell = self.sheet.cell(row=i, column=self.start_column)
-                # load string
+                if i > MAX_EXCEL_ROWS_NUM:
+                    break
 
-                if cell.value == sec_stop:
-                    # read summary
-                    # calculate summ
-                    # check if summ = summary
+                cell = self.sheet.cell(row=i, column=self.start_column)
+                if cell.value != sec_stop:
+                    deal_date: date = datetime.strptime(cell.value, "%d.%m.%y")
+                    cell = self.sheet.cell(row=i, column=3)
+                    deal_num = cell.value
+                    cell = self.sheet.cell(row=i, column=4)
+                    deal_time = cell.value
+
+                    cell = self.sheet.cell(row=i, column=5)
+                    bought = tofloat(ifnull(cell.value, 0))
+                    cell = self.sheet.cell(row=i, column=6)
+                    buy_price = tofloat(ifnull(cell.value, 0))
+                    cell = self.sheet.cell(row=i, column=7)
+                    buy_sum = tofloat(ifnull(cell.value, 0))
+                    sum_buy += buy_sum
+
+                    cell = self.sheet.cell(row=i, column=8)
+                    sold = tofloat(ifnull(cell.value, 0))
+                    cell = self.sheet.cell(row=i, column=9)
+                    sell_price = tofloat(ifnull(cell.value, 0))
+                    cell = self.sheet.cell(row=i, column=10)
+                    sell_sum = tofloat(ifnull(cell.value, 0))
+                    sum_sell += sell_sum
+
+                    cell = self.sheet.cell(row=i, column=11)
+                    currency = cell.value
+                    cell = self.sheet.cell(row=i, column=12)
+                    currency_pay = cell.value
+
+                    cell_date = self.sheet.cell(row=i, column=13)
+                    commission_date: date = datetime.strptime(cell_date.value, "%d.%m.%y")
+
+                    cell_time = self.sheet.cell(row=i, column=14)
+                    str_datetime = f'{cell_date.value} {cell_time.value}'
+                    commission_time: datetime = datetime.strptime(str_datetime, "%d.%m.%y %H:%M:%S")
+
+                    cell = self.sheet.cell(row=i, column=15)
+                    deal_type = cell.value
+
+                    cell = self.sheet.cell(row=i, column=16)
+                    pay_date: date = datetime.strptime(cell.value, "%d.%m.%y")
+
+                    cell = self.sheet.cell(row=i, column=17)
+                    delivery_date: date = datetime.strptime(cell.value, "%d.%m.%y")
+
+                    cell = self.sheet.cell(row=i, column=18)
+                    platform = cell.value
+
+                    cell = self.sheet.cell(row=i, column=20)
+                    note = cell.value
+
+                    share = BrokerageMonthlyDealsShare(secid, regnumber, isin, emitent,
+                                                       deal_date, deal_num, deal_time,
+                                                       bought, buy_price, buy_sum, sold, sell_price, sell_sum,
+                                                       currency, currency_pay, commission_date, commission_time,
+                                                       deal_type, pay_date, delivery_date, platform, note)
+                    self.shares.append(share)
+
+                else:
+                    cell = self.sheet.cell(row=i, column=7)
+                    summary_sum_buy = tofloat(ifnull(cell.value, 0))
+
+                    cell = self.sheet.cell(row=i, column=10)
+                    summary_sum_sell = tofloat(ifnull(cell.value, 0))
+
+                    logger.info(f"{self.class_name}._load_shares_table(): "
+                                f"Summary: {summary_sum_buy}, {summary_sum_sell}")
+
+                    if round(summary_sum_buy, 6) == round(sum_buy, 6) and \
+                       round(summary_sum_sell, 6) == round(sum_sell, 6):
+                        logger.info(f"{self.class_name}._load_shares_table(): "
+                                    f"Summaries are match calculations. It is good!")
+
+                    else:
+                        logger.error(f"{self.class_name}._load_shares_table(): "
+                                     f"Summaries are not match calculations. It is bad!")
+                        raise Exception("Summaries are not match calculations. It is bad!")
+
                     break
 
             i += 1
@@ -343,6 +641,9 @@ class BrokerageMonthlyDeals(Base):
 
             while True:
                 i += 1
+                if i > MAX_EXCEL_ROWS_NUM:
+                    break
+
                 cell = self.sheet.cell(row=i, column=self.start_column)
                 if cell.value != sec_stop:
                     deal_date: date = datetime.strptime(cell.value, "%d.%m.%y")
@@ -393,12 +694,15 @@ class BrokerageMonthlyDeals(Base):
                     cell = self.sheet.cell(row=i, column=19)
                     platform = cell.value
 
+                    cell = self.sheet.cell(row=i, column=21)
+                    note = cell.value
+
                     bond = BrokerageMonthlyDealsBond(secid, regnumber, isin, emitent,
                                                      deal_date, deal_num, deal_time,
                                                      bought, buy_price, buy_sum, buy_nkd,
                                                      sold, sell_price, sell_sum, sell_nkd,
                                                      currency, currency_pay, commission_date, deal_type, pay_date,
-                                                     delivery_date, platform)
+                                                     delivery_date, platform, note)
                     self.bonds.append(bond)
 
                 else:
@@ -434,5 +738,3 @@ class BrokerageMonthlyDeals(Base):
                     break
 
             i += 1
-
-

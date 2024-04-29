@@ -8,6 +8,8 @@
 --drop table reports.brokerage_monthly_money;
 --drop table reports.brokerage_monthly_operation;
 
+drop table reports.brokerage_monthly_deals_adr;
+drop table reports.brokerage_monthly_deals_share;
 drop table reports.brokerage_monthly_deals_bond;
 drop table reports.brokerage_monthly_deals;
 drop table reports.brokerage_monthly_transaction;
@@ -40,4 +42,12 @@ select * from reports.brokerage_monthly bm
 select * from reports.brokerage_monthly bm
   left join reports.brokerage_monthly_deals bmd on bmd.report_id = bm.id
   left join reports.brokerage_monthly_deals_bond bmdb on bmdb.deals_id = bmd.id
+  
+select * from reports.brokerage_monthly bm
+  left join reports.brokerage_monthly_deals bmd on bmd.report_id = bm.id  
+  left join reports.brokerage_monthly_deals_share bmds on bmds.deals_id = bmd.id;
+ 
+select * from reports.brokerage_monthly bm
+  left join reports.brokerage_monthly_deals bmd on bmd.report_id = bm.id  
+  left join reports.brokerage_monthly_deals_adr bmda on bmda.deals_id = bmd.id; 
   
