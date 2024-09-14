@@ -290,8 +290,12 @@ class BrokerageMonthlySecurities(Base):
 
         else:
             logger.error(f"{self.class_name}._check_all_securities_summs(): "
-                         f"Summs in total portfolio table do not mach total summs in a detailed table")
-            raise Exception('Summs in total portfolio table do not mach total summs in a detailed table')
+                         f"Summs in total portfolio table do not mach total summs in a detailed table\n"
+                         f"{self.portfolio_total_value_begin_rub} <> {self.table_summ_including_nkd_begin} "
+                         f"or / and {self.portfolio_total_value_end_rub} <> {self.table_summ_including_nkd_end}")
+            raise Exception(f"Summs in total portfolio table do not mach total summs in a detailed table\n"
+                            f"{self.portfolio_total_value_begin_rub} <> {self.table_summ_including_nkd_begin} "
+                            f"or / and {self.portfolio_total_value_end_rub} <> {self.table_summ_including_nkd_end}")
 
         _table_summ_nkd_begin: float = 0
         _table_summ_including_nkd_begin: float = 0
