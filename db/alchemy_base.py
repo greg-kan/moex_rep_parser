@@ -8,4 +8,4 @@ Base = declarative_base()
 
 params = st.DB_PARAMS
 engine = create_engine(
-    f"postgresql+psycopg2://{params['user']}:{params['password']}@{params['host']}:5432/{params['database']}")
+    f"postgresql+psycopg2://{params['user']}:{params['password']}@{params['host']}:{params['port']}/{params['database']}")
